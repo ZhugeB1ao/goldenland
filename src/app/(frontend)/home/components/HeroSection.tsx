@@ -1,15 +1,26 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
+  applySearchTagSuggestion,
   getSearchPlaceholder,
+  getSearchSuggestionFragment,
+  getSearchSuggestionFragmentRaw,
+  getSearchTagSuggestions,
   parseSearch,
+  readSearchHistory,
+  recordSearchHistory,
   removeSearchTokenByChip,
-  suggestMissingFilters,
+  type SearchHistoryItem,
   type SearchChip,
+  type SearchTagSuggestion,
   type SearchTab,
 } from '@/app/lib/hybridSearch'
-import { runHybridSearch, type HybridSearchResult } from '@/app/services/hybridSearch'
+import {
+  runHybridSearch,
+  searchProjectsByParsed,
+  type HybridSearchResult,
+} from '@/app/services/hybridSearch'
 
 type TabOption = {
   key: SearchTab
@@ -44,20 +55,72 @@ export function HeroSection() {
   const [searchResult, setSearchResult] = useState<HybridSearchResult | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([])
+  const [projectSuggestions, setProjectSuggestions] = useState<
+    { id: string | number; name?: string | null }[]
+  >([])
 
   const inputRef = useRef<HTMLInputElement>(null)
 
   const parsed = useMemo(() => parseSearch(inputValue, activeTab), [inputValue, activeTab])
-  const suggestions = useMemo(() => suggestMissingFilters(parsed, activeTab), [parsed, activeTab])
+  const suggestionFragment = useMemo(() => getSearchSuggestionFragment(inputValue), [inputValue])
+  const rawSuggestionFragment = useMemo(
+    () => getSearchSuggestionFragmentRaw(inputValue),
+    [inputValue],
+  )
+  const tagSuggestions = useMemo(
+    () => getSearchTagSuggestions(inputValue, activeTab, searchHistory, projectSuggestions),
+    [activeTab, inputValue, projectSuggestions, searchHistory],
+  )
   const placeholder = useMemo(() => getSearchPlaceholder(activeTab), [activeTab])
 
-  const handleSearch = async () => {
+  useEffect(() => {
+    setSearchHistory(readSearchHistory())
+  }, [])
+
+  useEffect(() => {
+    if (activeTab !== 'all' && activeTab !== 'project') {
+      setProjectSuggestions([])
+      return
+    }
+
+    if (suggestionFragment.length < 2 || rawSuggestionFragment.length < 2) {
+      setProjectSuggestions([])
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      const parsedProjectSearch = parseSearch(rawSuggestionFragment, 'project')
+
+      void searchProjectsByParsed(parsedProjectSearch, { limit: 5 })
+        .then((result) => {
+          setProjectSuggestions(
+            result.items.map((project) => ({
+              id: project.id,
+              name: project.name,
+            })),
+          )
+        })
+        .catch(() => setProjectSuggestions([]))
+    }, 250)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [activeTab, rawSuggestionFragment, suggestionFragment])
+
+  const handleTabChange = (tab: SearchTab) => {
+    setActiveTab(tab)
+    setSearchResult(null)
+    setErrorMessage(null)
+  }
+
+  const handleSearch = async (parsedSearch = parsed, rawInput = inputValue) => {
     setIsLoading(true)
     setErrorMessage(null)
 
     try {
-      const result = await runHybridSearch(parsed)
+      const result = await runHybridSearch(parsedSearch)
       setSearchResult(result)
+      setSearchHistory(recordSearchHistory(rawInput, parsedSearch))
     } catch (error: unknown) {
       setErrorMessage(error instanceof Error ? error.message : 'Không thể tìm kiếm lúc này')
     } finally {
@@ -75,8 +138,13 @@ export function HeroSection() {
     inputRef.current?.focus()
   }
 
-  const handleSelectSuggestion = (suggestion: string) => {
-    setInputValue((previous) => compactInput(`${previous} ${suggestion}`))
+  const handleSelectTagSuggestion = (suggestion: SearchTagSuggestion) => {
+    setActiveTab((currentTab) => {
+      if (currentTab === 'all' || suggestion.tab === currentTab) return currentTab
+
+      return suggestion.tab
+    })
+    setInputValue((previous) => applySearchTagSuggestion(previous, suggestion))
     inputRef.current?.focus()
   }
 
@@ -101,7 +169,7 @@ export function HeroSection() {
                       ? 'whitespace-nowrap border-b-2 border-primary pb-3 text-sm font-bold text-primary'
                       : 'whitespace-nowrap pb-3 text-sm font-medium text-secondary transition-colors hover:text-on-surface'
                   }
-                  onClick={() => setActiveTab(tab.key)}
+                  onClick={() => handleTabChange(tab.key)}
                   type="button"
                 >
                   {tab.label}
@@ -158,17 +226,17 @@ export function HeroSection() {
               </div>
             )}
 
-            {suggestions.length > 0 && (
+            {tagSuggestions.length > 0 && (
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs text-secondary">Gợi ý:</span>
-                {suggestions.map((suggestion) => (
+                {tagSuggestions.map((suggestion) => (
                   <button
-                    key={suggestion}
+                    key={suggestion.id}
                     className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs text-secondary transition-colors hover:border-primary hover:text-primary"
-                    onClick={() => handleSelectSuggestion(suggestion)}
+                    onClick={() => handleSelectTagSuggestion(suggestion)}
                     type="button"
                   >
-                    {suggestion}
+                    {suggestion.label}
                   </button>
                 ))}
               </div>

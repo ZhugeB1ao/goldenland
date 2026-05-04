@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDispatch, useSelector } from 'react-redux'
 import { signInThunk, selectAuthLoading, selectAuthError } from '../store/slices/authSlice'
+import { fetchFavoritesThunk } from '../store/slices/favoritesSlice'
 import type { RootState, AppDispatch } from '../store'
 
 type SignInFormProps = {
@@ -27,6 +28,7 @@ export function SignInForm({ onClose, onSwitchToRegister }: SignInFormProps) {
 
     const result = await dispatch(signInThunk({ email, password }))
     if (result.type.endsWith('/fulfilled')) {
+      await dispatch(fetchFavoritesThunk())
       onClose()
       router.refresh()
     }
@@ -158,9 +160,7 @@ export function SignInForm({ onClose, onSwitchToRegister }: SignInFormProps) {
               </a>
             </div>
 
-            {error ? (
-              <p className="mb-4 text-sm font-medium text-red-600">{error}</p>
-            ) : null}
+            {error ? <p className="mb-4 text-sm font-medium text-red-600">{error}</p> : null}
 
             {/* Login Button */}
             <button

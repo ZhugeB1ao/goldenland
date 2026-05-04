@@ -1,7 +1,8 @@
 import { fetchFeaturedProjects } from '@/app/services/projects'
-
 export async function FeaturedProjectsSection() {
-  const { data: projects } = await fetchFeaturedProjects()
+
+  const response = await fetchFeaturedProjects()
+  const projects = response.data
 
   return (
     <section className="mx-auto max-w-screen-2xl px-8 pb-24">

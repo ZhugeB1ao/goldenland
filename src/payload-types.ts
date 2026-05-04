@@ -83,7 +83,7 @@ export interface Config {
     vouchers: Voucher;
     orders: Order;
     notifications: Notification;
-    'saved-properties': SavedProperty;
+    favorites: Favorite;
     'view-history': ViewHistory;
     'spam-blacklist': SpamBlacklist;
     'payload-kv': PayloadKv;
@@ -109,7 +109,7 @@ export interface Config {
     vouchers: VouchersSelect<false> | VouchersSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     notifications: NotificationsSelect<false> | NotificationsSelect<true>;
-    'saved-properties': SavedPropertiesSelect<false> | SavedPropertiesSelect<true>;
+    favorites: FavoritesSelect<false> | FavoritesSelect<true>;
     'view-history': ViewHistorySelect<false> | ViewHistorySelect<true>;
     'spam-blacklist': SpamBlacklistSelect<false> | SpamBlacklistSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -811,9 +811,9 @@ export interface Notification {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "saved-properties".
+ * via the `definition` "favorites".
  */
-export interface SavedProperty {
+export interface Favorite {
   id: number;
   user: number | User;
   property: number | Property;
@@ -936,8 +936,8 @@ export interface PayloadLockedDocument {
         value: number | Notification;
       } | null)
     | ({
-        relationTo: 'saved-properties';
-        value: number | SavedProperty;
+        relationTo: 'favorites';
+        value: number | Favorite;
       } | null)
     | ({
         relationTo: 'view-history';
@@ -1349,9 +1349,9 @@ export interface NotificationsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "saved-properties_select".
+ * via the `definition` "favorites_select".
  */
-export interface SavedPropertiesSelect<T extends boolean = true> {
+export interface FavoritesSelect<T extends boolean = true> {
   user?: T;
   property?: T;
   updatedAt?: T;

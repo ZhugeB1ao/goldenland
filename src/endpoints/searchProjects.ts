@@ -1,5 +1,13 @@
 import type { Endpoint } from 'payload'
 
+const parseIntInRange = (value: string | undefined, min: number, max: number): number | undefined => {
+  if (!value) return undefined
+  const parsed = Number.parseInt(value, 10)
+  if (!Number.isFinite(parsed)) return undefined
+  if (parsed < min || parsed > max) return undefined
+  return parsed
+}
+
 type SearchProjectsQuery = {
   keyword?: string
   district?: string
@@ -23,6 +31,10 @@ export const searchProjects: Endpoint = {
       sort = '-createdAt',
     } = query
 
+    const pageNumber = parseIntInRange(page, 1, 200) ?? 1
+    const limitNumber = parseIntInRange(limit, 1, 50) ?? 20
+    const districtNumber = parseIntInRange(district, 1, 30)
+
     const where: any = {
       and: [{ status: { equals: 'active' } }],
     }
@@ -37,13 +49,14 @@ export const searchProjects: Endpoint = {
       })
     }
 
-    if (district) {
+    if (districtNumber) {
       where.and.push({
         or: [
-          { address: { like: `quận ${district}` } },
-          { address: { like: `quan ${district}` } },
-          { address: { like: `q.${district}` } },
-          { address: { like: `q${district}` } },
+          { address: { like: `quận ${districtNumber}` } },
+          { address: { like: `quan ${districtNumber}` } },
+          { address: { like: `q.${districtNumber}` } },
+          { address: { like: `q ${districtNumber}` } },
+          { address: { like: ` q${districtNumber}` } },
         ],
       })
     }
@@ -52,8 +65,8 @@ export const searchProjects: Endpoint = {
       const result = await payload.find({
         collection: 'projects',
         where,
-        page: Number(page),
-        limit: Number(limit),
+        page: pageNumber,
+        limit: limitNumber,
         sort: String(sort),
         depth: 1,
         overrideAccess: false,

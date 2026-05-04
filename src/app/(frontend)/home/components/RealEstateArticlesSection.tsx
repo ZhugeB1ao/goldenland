@@ -46,6 +46,8 @@ export function RealEstateArticlesSection() {
             date: dateFormatter.format(new Date(article.updatedAt)),
           })),
         )
+
+        console.log('Fetched news items:', featuredArticles)
       } catch {
         if (isMounted) {
           setNewsItems([])

@@ -1,5 +1,5 @@
 import type { AxiosRequestConfig } from 'axios'
-import type { Article, Media } from '@/payload-types'
+import type { Article } from '@/payload-types'
 import { buildQuery } from '@/app/lib/query'
 import { getJSON, getServerBaseURL } from '@/app/lib/http'
 
@@ -8,21 +8,19 @@ type PayloadFindResponse<T> = {
   docs: T[]
 }
 
-type RawFeaturedArticle = Pick<Article, 'id' | 'title' | 'excerpt' | 'updatedAt' | 'thumbnail'>
+type RawFeaturedArticle = Pick<Article, 'id' | 'title' | 'excerpt' | 'updatedAt' | 'thumbnailUrl'>
 
 export type FeaturedArticleSummary = Pick<Article, 'id' | 'title' | 'excerpt' | 'updatedAt'> & {
-  imageUrl?: string
+  imageUrl?: string | null
 }
 
-const resolveMediaURL = (thumbnail?: (number | null) | Media): string | undefined => {
-  // Relationship can be ID-only or missing depending on query depth/select.
-  if (!thumbnail || typeof thumbnail === 'number') return undefined
-  if (!thumbnail.url) return undefined
-  if (thumbnail.url.startsWith('http://') || thumbnail.url.startsWith('https://')) {
-    return thumbnail.url
+const resolveMediaURL = (thumbnailUrl?: string | null): string | undefined => {
+  if (!thumbnailUrl) return undefined
+  if (thumbnailUrl.startsWith('http://') || thumbnailUrl.startsWith('https://')) {
+    return thumbnailUrl
   }
 
-  return `${getServerBaseURL()}${thumbnail.url}`
+  return `${getServerBaseURL()}${thumbnailUrl}`
 }
 
 // Fetch featured articles by category id
@@ -30,39 +28,39 @@ export async function fetchFeaturedArticlesBasedOnCategoryId(
   category: string | number,
   config?: AxiosRequestConfig,
 ): Promise<FeaturedArticleSummary[]> {
-    // Normalize numeric category values from UI params.
-    const categoryValue = /^\d+$/.test(String(category)) ? Number(category) : category
+  // Normalize numeric category values from UI params.
+  const categoryValue = /^\d+$/.test(String(category)) ? Number(category) : category
 
-    // Request only fields used by the featured section.
-    const query = buildQuery({
-        select: {
-            title: true,
-            excerpt: true,
-            updatedAt: true,
-            thumbnail: true,
-        },
-        where: {
-            category: {
-            equals: categoryValue,
-            },
-        },
-        limit: 6,
-        sort: '-createdAt',
-    })
+  // Request only fields used by the featured section.
+  const query = buildQuery({
+      select: {
+          title: true,
+          excerpt: true,
+          updatedAt: true,
+          thumbnailUrl: true,
+      },
+      where: {
+          category: {
+          equals: categoryValue,
+          },
+      },
+      limit: 6,
+      sort: '-createdAt',
+  })
 
-    const response = await getJSON<PayloadFindResponse<RawFeaturedArticle>>(
-      `/api/articles${query}`,
-      config,
-    )
+  const response = await getJSON<PayloadFindResponse<RawFeaturedArticle>>(
+    `/api/articles${query}`,
+    config,
+  )
 
-    // Keep only fields used by the homepage section.
-    return response.docs.map(({ id, title, excerpt, updatedAt, thumbnail }) => ({
-      id,
-      title,
-      excerpt,
-      updatedAt,
-      imageUrl: resolveMediaURL(thumbnail),
-    }))
+  // Keep only fields used by the homepage section.
+  return response.docs.map(({ id, title, excerpt, updatedAt, thumbnailUrl }) => ({
+    id,
+    title,
+    excerpt,
+    updatedAt,
+    imageUrl: resolveMediaURL(thumbnailUrl),
+  }))
 }
 
 // Fetch 6 published real-estate news articles (category = 6) sorted by highest view count.
@@ -74,7 +72,7 @@ export async function fetchTopViewedRealEstateNews(
       title: true,
       excerpt: true,
       updatedAt: true,
-      thumbnail: true,
+      thumbnailUrl: true,
     },
     where: {
       and: [
@@ -99,12 +97,12 @@ export async function fetchTopViewedRealEstateNews(
     config,
   )
 
-  return response.docs.map(({ id, title, excerpt, updatedAt, thumbnail }) => ({
+  return response.docs.map(({ id, title, excerpt, updatedAt, thumbnailUrl }) => ({
     id,
     title,
     excerpt,
     updatedAt,
-    imageUrl: resolveMediaURL(thumbnail),
+    imageUrl: resolveMediaURL(thumbnailUrl),
   }))
 }
 

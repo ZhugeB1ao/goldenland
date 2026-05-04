@@ -63,3 +63,20 @@ export async function postJSON<TResponse, TBody = unknown>(
     throw error
   }
 }
+
+export async function deleteJSON<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+  try {
+    const response = await axios.delete<T>(resolveRequestURL(url), config)
+
+    return response.data
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const payload = error.response?.data as ApiErrorResponse | undefined
+      const errorMessage = payload?.error ?? error.message
+
+      throw new Error(errorMessage)
+    }
+
+    throw error
+  }
+}

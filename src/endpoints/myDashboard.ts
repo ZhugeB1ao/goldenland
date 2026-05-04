@@ -72,9 +72,9 @@ export const myDashboard: Endpoint = {
                 req,
             })
 
-            // Đếm tin đã lưu
-            const saved = await payload.find({
-                collection: 'saved-properties',
+            // Đếm tin yêu thích
+            const favorites = await payload.find({
+                collection: 'favorites',
                 where: { user: { equals: user.id } },
                 limit: 0,
                 overrideAccess: false,
@@ -113,7 +113,7 @@ export const myDashboard: Endpoint = {
                     total: active.totalDocs + pending.totalDocs + expired.totalDocs + sold.totalDocs + drafts.totalDocs,
                 },
                 vouchersActive: vouchers.totalDocs,
-                savedProperties: saved.totalDocs,
+                favoriteProperties: favorites.totalDocs,
                 unreadNotifications: unreadNotifs.totalDocs,
                 recentOrders: recentOrders.docs,
             })

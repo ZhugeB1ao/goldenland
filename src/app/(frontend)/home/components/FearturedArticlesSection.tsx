@@ -130,6 +130,13 @@ export function FeaturedArticlesSection() {
           setRemoteCategories(nextCategories)
           setActiveCategoryTitle(nextCategories[0]?.title ?? initialCategories[0].title)
         }
+
+        console.log('fetchFeaturedArticlesBasedOnCategoryId results:', {
+          topViewed: topViewedResult,
+          haNoi: haNoiResult,
+          tpHcm: tpHcmResult,
+        })
+        
       } catch {
         if (isMounted) {
           // Keep empty tab shells if the request fails.

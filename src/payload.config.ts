@@ -22,7 +22,7 @@ import { PostingPrices } from './collections/PostingPrices'
 import { Vouchers } from './collections/Vouchers'
 import { Orders } from './collections/Orders'
 import { Notifications } from './collections/Notifications'
-import { SavedProperties } from './collections/SavedProperties'
+import { Favorites } from './collections/Favorites'
 import { ViewHistory } from './collections/ViewHistory'
 import { SpamBlacklist } from './collections/SpamBlacklist'
 
@@ -33,7 +33,13 @@ import { purchasePackage } from './endpoints/purchasePackage'
 import { searchProperties } from './endpoints/searchProperties'
 import { searchProjects } from './endpoints/searchProjects'
 import { searchNews } from './endpoints/searchNews'
-import { toggleSavedProperty } from './endpoints/toggleSavedProperty'
+import {
+  bulkCreateFavorites,
+  createFavorite,
+  deleteFavorite,
+  getFavorites,
+} from './endpoints/favorites'
+import { toggleFavorite } from './endpoints/toggleFavorite'
 import { trackView } from './endpoints/trackView'
 import {
   markNotificationRead,
@@ -61,7 +67,11 @@ export default buildConfig({
     searchProperties,
     searchProjects,
     searchNews,
-    toggleSavedProperty,
+    getFavorites,
+    createFavorite,
+    deleteFavorite,
+    bulkCreateFavorites,
+    toggleFavorite,
     trackView,
     markNotificationRead,
     markAllNotificationsRead,
@@ -72,7 +82,7 @@ export default buildConfig({
     projectDetail,
   ],
   collections: [Users, Profiles, Properties, Projects, Media, Investors, Articles, ArticleCategories, Banners, Contacts, Reports, Packages, PostingPrices, Vouchers, Orders,
-    Notifications, SavedProperties, ViewHistory, SpamBlacklist
+    Notifications, Favorites, ViewHistory, SpamBlacklist
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

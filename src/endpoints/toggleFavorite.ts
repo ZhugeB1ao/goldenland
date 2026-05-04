@@ -1,8 +1,8 @@
 // @ts-nocheck
 import type { Endpoint } from 'payload'
 
-export const toggleSavedProperty: Endpoint = {
-    path: '/saved-properties/toggle',
+export const toggleFavorite: Endpoint = {
+    path: '/favorites/toggle',
     method: 'post',
     handler: async (req) => {
         const { payload, user } = req
@@ -19,9 +19,9 @@ export const toggleSavedProperty: Endpoint = {
                 return Response.json({ error: 'Thiếu propertyId' }, { status: 400 })
             }
 
-            // Kiểm tra đã lưu chưa
+            // Kiểm tra đã yêu thích chưa
             const existing = await payload.find({
-                collection: 'saved-properties',
+                collection: 'favorites',
                 where: {
                     and: [{ user: { equals: user.id } }, { property: { equals: propertyId } }],
                 },
@@ -31,18 +31,18 @@ export const toggleSavedProperty: Endpoint = {
             })
 
             if (existing.docs.length > 0) {
-                // Đã lưu → bỏ lưu
+                // Đã yêu thích -> bỏ yêu thích
                 await payload.delete({
-                    collection: 'saved-properties',
+                    collection: 'favorites',
                     id: existing.docs[0].id,
                     overrideAccess: false,
                     req,
                 })
-                return Response.json({ success: true, saved: false, message: 'Đã bỏ lưu' })
+                return Response.json({ success: true, favorited: false, message: 'Đã bỏ yêu thích' })
             } else {
-                // Chưa lưu → lưu
+                // Chưa yêu thích -> thêm yêu thích
                 await payload.create({
-                    collection: 'saved-properties',
+                    collection: 'favorites',
                     data: {
                         user: user.id,
                         property: propertyId,
@@ -50,7 +50,7 @@ export const toggleSavedProperty: Endpoint = {
                     overrideAccess: false,
                     req,
                 })
-                return Response.json({ success: true, saved: true, message: 'Đã lưu tin' })
+                return Response.json({ success: true, favorited: true, message: 'Đã thêm vào yêu thích' })
             }
         } catch (error: any) {
             return Response.json({ error: error.message }, { status: 500 })

@@ -4,6 +4,12 @@ import { fetchNewProperties } from '@/app/services/properties'
 import divisions from '@/app/data/vietnam-divisions.json'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import {
+  toggleFavoriteThunk,
+  selectFavoriteIdSet,
+} from '@/app/(frontend)/store/slices/favoritesSlice'
+import type { AppDispatch, RootState } from '@/app/(frontend)/store'
 
 type PropertyItem = {
   id: number
@@ -123,6 +129,8 @@ function mapPropertyToItem(property: Property): PropertyItem {
 }
 
 export function PropertyForYouSection() {
+  const dispatch = useDispatch<AppDispatch>()
+  const favoriteIdSet = useSelector((state: RootState) => selectFavoriteIdSet(state as any))
   const [properties, setProperties] = useState<PropertyItem[]>([])
   const [currentPage, setCurrentPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
@@ -196,53 +204,70 @@ export function PropertyForYouSection() {
       )}
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {properties.map((property) => (
-          <div
-            key={property.id}
-            className="group cursor-pointer overflow-hidden rounded-lg border border-outline-variant/20 bg-white transition-all hover:shadow-xl"
-          >
-            <div className="relative h-[208px] min-h-[208px] max-h-[208px] overflow-hidden">
-              <img
-                alt={property.imageAlt}
-                className="block h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                src={property.image}
-              />
-            </div>
+        {properties.map((property) => {
+          const isFavorite = favoriteIdSet.has(property.id)
 
-            <div className="flex h-[180px] flex-col justify-between p-4">
-              <div>
-                <h4 className="font-lexend mb-2 overflow-hidden text-ellipsis [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical] font-bold text-on-surface transition-colors group-hover:text-primary">
-                  {property.title}
-                </h4>
-
-                <div className="font-lexend text-lg font-bold text-primary">
-                  {property.price}
-                  <span className="mx-1 font-normal text-secondary">·</span>
-                  {property.area}
-                </div>
-
-                <div className="mt-2 flex min-w-0 items-center gap-1 text-sm text-secondary">
-                  <span className="material-symbols-outlined shrink-0 text-base">location_on</span>
-                  <span className="min-w-0 flex-1 truncate">{property.location}</span>
-                </div>
+          return (
+            <div
+              key={property.id}
+              className="group cursor-pointer overflow-hidden rounded-lg border border-outline-variant/20 bg-white transition-all hover:shadow-xl"
+            >
+              <div className="relative h-[208px] min-h-[208px] max-h-[208px] overflow-hidden">
+                <img
+                  alt={property.imageAlt}
+                  className="block h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  src={property.image}
+                />
               </div>
 
-              <div className="mt-2 flex items-center justify-between ">
-                <span className="text-xs italic text-secondary">Đăng hôm nay</span>
+              <div className="flex h-[180px] flex-col justify-between p-4">
+                <div>
+                  <h4 className="font-lexend mb-2 overflow-hidden text-ellipsis [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical] font-bold text-on-surface transition-colors group-hover:text-primary">
+                    {property.title}
+                  </h4>
 
-                <button
-                  aria-label={`Thêm ${property.title} vào mục yêu thích`}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-outline-variant/30 transition-colors hover:border-primary hover:bg-primary/10"
-                  type="button"
-                >
-                  <span className="material-symbols-outlined text-lg text-secondary hover:text-primary">
-                    favorite
-                  </span>
-                </button>
+                  <div className="font-lexend text-lg font-bold text-primary">
+                    {property.price}
+                    <span className="mx-1 font-normal text-secondary">·</span>
+                    {property.area}
+                  </div>
+
+                  <div className="mt-2 flex min-w-0 items-center gap-1 text-sm text-secondary">
+                    <span className="material-symbols-outlined shrink-0 text-base">
+                      location_on
+                    </span>
+                    <span className="min-w-0 flex-1 truncate">{property.location}</span>
+                  </div>
+                </div>
+
+                <div className="mt-2 flex items-center justify-between ">
+                  <span className="text-xs italic text-secondary">Đăng hôm nay</span>
+
+                  <button
+                    aria-label={`${isFavorite ? 'Bỏ khỏi' : 'Thêm vào'} danh sách yêu thích: ${property.title}`}
+                    className={`flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${
+                      isFavorite
+                        ? 'border-red-300 bg-red-50 hover:border-red-400 hover:bg-red-100'
+                        : 'border-outline-variant/30 hover:border-primary hover:bg-primary/10'
+                    }`}
+                    onClick={() => {
+                      void dispatch(toggleFavoriteThunk(property.id))
+                    }}
+                    type="button"
+                  >
+                    <span
+                      className={`material-symbols-outlined text-lg transition-colors ${
+                        isFavorite ? 'text-red-500' : 'text-secondary hover:text-primary'
+                      }`}
+                    >
+                      {isFavorite ? 'favorite' : 'favorite_border'}
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       {!isInitialLoading && properties.length === 0 && (
