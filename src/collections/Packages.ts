@@ -6,7 +6,7 @@ export const Packages: CollectionConfig = {
     slug: 'packages',
     admin: {
         useAsTitle: 'name',
-        defaultColumns: ['name', 'price', 'totalProperties', 'bonusVouchers', 'isActive', 'isBestSeller', 'subtitle'],
+        defaultColumns: ['name', 'price', 'totalListings', 'bonusVouchers', 'isActive'],
     },
     access: {
         create: adminOnly,

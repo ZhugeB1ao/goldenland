@@ -2,7 +2,10 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { signIn } from '@/app/services/auth'
+import { useDispatch, useSelector } from 'react-redux'
+import { signInThunk, selectAuthLoading, selectAuthError } from '../store/slices/authSlice'
+import { fetchFavoritesThunk } from '../store/slices/favoritesSlice'
+import type { RootState, AppDispatch } from '../store'
 
 type SignInFormProps = {
   onClose: () => void
@@ -11,28 +14,23 @@ type SignInFormProps = {
 
 export function SignInForm({ onClose, onSwitchToRegister }: SignInFormProps) {
   const router = useRouter()
+  const dispatch = useDispatch<AppDispatch>()
+  const loading = useSelector((state: RootState) => selectAuthLoading(state as any))
+  const error = useSelector((state: RootState) => selectAuthError(state as any))
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setErrorMessage(null)
-    setIsSubmitting(true)
 
-    try {
-      await signIn(email, password)
+    const result = await dispatch(signInThunk({ email, password }))
+    if (result.type.endsWith('/fulfilled')) {
+      await dispatch(fetchFavoritesThunk())
       onClose()
       router.refresh()
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : 'Đăng nhập thất bại. Vui lòng thử lại.',
-      )
-    } finally {
-      setIsSubmitting(false)
     }
   }
 
@@ -80,8 +78,9 @@ export function SignInForm({ onClose, onSwitchToRegister }: SignInFormProps) {
                 type="text"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
+                disabled={loading}
                 placeholder="your@email.com"
-                className="w-full border border-gray-200 rounded-md px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition"
+                className="w-full border border-gray-200 rounded-md px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
 
@@ -93,7 +92,8 @@ export function SignInForm({ onClose, onSwitchToRegister }: SignInFormProps) {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  className="w-full border border-gray-200 rounded-md px-4 py-2.5 pr-10 text-sm text-gray-800 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition"
+                  disabled={loading}
+                  className="w-full border border-gray-200 rounded-md px-4 py-2.5 pr-10 text-sm text-gray-800 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <button
                   type="button"
@@ -150,7 +150,8 @@ export function SignInForm({ onClose, onSwitchToRegister }: SignInFormProps) {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={() => setRememberMe(!rememberMe)}
-                  className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
+                  disabled={loading}
+                  className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <span className="text-sm text-gray-600">Nhớ tài khoản</span>
               </label>
@@ -159,17 +160,15 @@ export function SignInForm({ onClose, onSwitchToRegister }: SignInFormProps) {
               </a>
             </div>
 
-            {errorMessage ? (
-              <p className="mb-4 text-sm font-medium text-red-600">{errorMessage}</p>
-            ) : null}
+            {error ? <p className="mb-4 text-sm font-medium text-red-600">{error}</p> : null}
 
             {/* Login Button */}
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={loading}
               className="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-semibold py-3 rounded-md transition text-sm tracking-wide disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
+              {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
             </button>
           </form>
 

@@ -2,7 +2,7 @@
 import type { Endpoint } from 'payload'
 
 export const trackView: Endpoint = {
-    path: '/listings/:id/view',
+    path: '/properties/:id/view',
     method: 'post',
     handler: async (req) => {
         const { payload, user } = req
@@ -18,11 +18,13 @@ export const trackView: Endpoint = {
                     where: {
                         and: [
                             { user: { equals: user.id } },
-                            { listing: { equals: id } },
+                            { property: { equals: id } },
                             { createdAt: { greater_than: oneHourAgo } },
                         ],
                     },
                     limit: 1,
+                    overrideAccess: false,
+                    req,
                 })
 
                 if (recent.docs.length === 0) {
@@ -30,8 +32,10 @@ export const trackView: Endpoint = {
                         collection: 'view-history',
                         data: {
                             user: user.id,
-                            listing: id,
+                            property: id,
                         },
+                        overrideAccess: false,
+                        req,
                     })
                 }
             }

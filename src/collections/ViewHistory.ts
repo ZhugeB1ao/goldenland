@@ -5,7 +5,7 @@ import { ownerOrAdmin, adminOnly } from '@/access'
 export const ViewHistory: CollectionConfig = {
     slug: 'view-history',
     admin: {
-        defaultColumns: ['user', 'listing', 'createdAt'],
+        defaultColumns: ['user', 'property', 'createdAt'],
     },
     access: {
         create: ownerOrAdmin('user'),
@@ -22,9 +22,9 @@ export const ViewHistory: CollectionConfig = {
             index: true,
         },
         {
-            name: 'listing',
+            name: 'property',
             type: 'relationship',
-            relationTo: 'listings',
+            relationTo: 'properties',
             required: true,
         },
     ],

@@ -1037,6 +1037,8 @@ export const myPlugin =
 
 For deeper exploration of specific topics, refer to the context files located in `.cursor/rules/`:
 
+Also review [fe-vs-be-query-strategy-guide.md](.cursor/rules/fe-vs-be-query-strategy-guide.md) before implementing API calls or query logic.
+
 ### Available Context Files
 
 1. **`payload-overview.md`** - High-level architecture and core concepts

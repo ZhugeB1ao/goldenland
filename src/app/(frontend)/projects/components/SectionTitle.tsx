@@ -1,6 +1,6 @@
 export default function SectionTitle({ children }: { children: React.ReactNode }) {
     return (
-        <div className="text-xl font-bold border-b-2 border-black pb-2 mb-4">
+        <div className="text-xl font-bold border-l-4 border-emerald-500 pl-3 mb-5 text-gray-900">
             {children}
         </div>
     )

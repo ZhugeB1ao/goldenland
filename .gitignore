@@ -74,6 +74,7 @@ lerna-debug.log*
 *.swo
 *~
 
+
 # ===== AI tools =====
 /.cursor
 /.agents

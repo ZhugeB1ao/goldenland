@@ -23,6 +23,8 @@ export const purchasePackage: Endpoint = {
             const pkg = await payload.findByID({
                 collection: 'packages',
                 id: packageId,
+                overrideAccess: false,
+                req,
             })
 
             if (!pkg || !pkg.isActive) {
@@ -41,6 +43,8 @@ export const purchasePackage: Endpoint = {
                         user: { equals: user.id },
                         status: { equals: 'active' },
                     },
+                    overrideAccess: false,
+                    req,
                 })
 
                 if (vouchers.docs.length > 0) {
@@ -86,6 +90,8 @@ export const purchasePackage: Endpoint = {
                     status: 'paid',
                     paidAt: new Date().toISOString(),
                 },
+                overrideAccess: false,
+                req,
             })
 
             // 5. Trừ số dư
@@ -95,6 +101,8 @@ export const purchasePackage: Endpoint = {
                 data: {
                     balance: currentBalance - totalAmount,
                 },
+                overrideAccess: false,
+                req,
             })
 
             // 6. Đánh dấu voucher đã dùng
@@ -106,6 +114,8 @@ export const purchasePackage: Endpoint = {
                         status: 'used',
                         usedAt: new Date().toISOString(),
                     },
+                    overrideAccess: false,
+                    req,
                 })
             }
 
@@ -126,6 +136,8 @@ export const purchasePackage: Endpoint = {
                             expiresAt: expiresAt.toISOString(),
                             source: 'package',
                         },
+                        overrideAccess: false,
+                        req,
                     })
                 }
             }

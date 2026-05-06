@@ -1,5 +1,6 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import { s3Storage } from '@payloadcms/storage-s3'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
@@ -7,7 +8,7 @@ import sharp from 'sharp'
 
 import { Users } from './collections/Users'
 import { Profiles } from './collections/Profiles'
-import { Listings } from './collections/Listings'
+import { Properties } from './collections/Properties'
 import { Projects } from './collections/Projects'
 import { Media } from './collections/Media'
 import { Investors } from './collections/Investors'
@@ -21,7 +22,7 @@ import { PostingPrices } from './collections/PostingPrices'
 import { Vouchers } from './collections/Vouchers'
 import { Orders } from './collections/Orders'
 import { Notifications } from './collections/Notifications'
-import { SavedListings } from './collections/SavedListings'
+import { Favorites } from './collections/Favorites'
 import { ViewHistory } from './collections/ViewHistory'
 import { SpamBlacklist } from './collections/SpamBlacklist'
 
@@ -29,8 +30,16 @@ import { Settings } from './app/globals/Settings'
 
 import { divisionEndpoints } from './endpoints/divisions'
 import { purchasePackage } from './endpoints/purchasePackage'
-import { searchListings } from './endpoints/searchListings'
-import { toggleSavedListing } from './endpoints/toggleSavedListing'
+import { searchProperties } from './endpoints/searchProperties'
+import { searchProjects } from './endpoints/searchProjects'
+import { searchNews } from './endpoints/searchNews'
+import {
+  bulkCreateFavorites,
+  createFavorite,
+  deleteFavorite,
+  getFavorites,
+} from './endpoints/favorites'
+import { toggleFavorite } from './endpoints/toggleFavorite'
 import { trackView } from './endpoints/trackView'
 import {
   markNotificationRead,
@@ -38,8 +47,8 @@ import {
   countUnreadNotifications,
 } from './endpoints/notifications'
 import { myDashboard } from './endpoints/myDashboard'
+import { meProfile } from './endpoints/me'
 import { projectDetail, projects } from './endpoints/projects'
-import { getNewListings } from './endpoints/listings'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -55,19 +64,25 @@ export default buildConfig({
   endpoints: [
     ...divisionEndpoints,
     purchasePackage,
-    searchListings,
-    toggleSavedListing,
+    searchProperties,
+    searchProjects,
+    searchNews,
+    getFavorites,
+    createFavorite,
+    deleteFavorite,
+    bulkCreateFavorites,
+    toggleFavorite,
     trackView,
     markNotificationRead,
     markAllNotificationsRead,
     countUnreadNotifications,
     myDashboard,
+    meProfile,
     projects,
     projectDetail,
-    getNewListings,
   ],
-  collections: [Users, Profiles, Listings, Projects, Media, Investors, Articles, ArticleCategories, Banners, Contacts, Reports, Packages, PostingPrices, Vouchers, Orders,
-    Notifications, SavedListings, ViewHistory, SpamBlacklist
+  collections: [Users, Profiles, Properties, Projects, Media, Investors, Articles, ArticleCategories, Banners, Contacts, Reports, Packages, PostingPrices, Vouchers, Orders,
+    Notifications, Favorites, ViewHistory, SpamBlacklist
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
@@ -83,5 +98,21 @@ export default buildConfig({
     },
   }),
   sharp,
-  plugins: [],
+  plugins: [
+    s3Storage({
+      collections: {
+        media: true,
+      },
+      bucket: process.env.S3_BUCKET || '',
+      config: {
+        endpoint: process.env.S3_ENDPOINT || '',
+        region: process.env.S3_REGION || 'ap-southeast-1',
+        credentials: {
+          accessKeyId: process.env.S3_ACCESS_KEY_ID || '',
+          secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
+        },
+        forcePathStyle: true,
+      },
+    }),
+  ],
 })

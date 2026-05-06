@@ -6,7 +6,7 @@ export const Reports: CollectionConfig = {
     slug: 'reports',
     admin: {
         useAsTitle: 'reason',
-        defaultColumns: ['reason', 'listing', 'reporter', 'status', 'createdAt'],
+        defaultColumns: ['reason', 'property', 'reporter', 'status', 'createdAt'],
     },
     access: {
         create: authenticated,
@@ -16,9 +16,9 @@ export const Reports: CollectionConfig = {
     },
     fields: [
         {
-            name: 'listing',
+            name: 'property',
             type: 'relationship',
-            relationTo: 'listings',
+            relationTo: 'properties',
             required: true,
             admin: { description: 'Tin bị báo cáo' },
         },

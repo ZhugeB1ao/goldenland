@@ -39,7 +39,7 @@ export const Notifications: CollectionConfig = {
             required: true,
             options: [
                 { label: 'Hệ thống', value: 'system' },
-                { label: 'Tin đăng', value: 'listing' },
+                { label: 'Tin đăng', value: 'property' },
                 { label: 'Thanh toán', value: 'payment' },
                 { label: 'Khuyến mãi', value: 'promotion' },
                 { label: 'Xác thực', value: 'verification' },
@@ -49,7 +49,7 @@ export const Notifications: CollectionConfig = {
             name: 'referenceType',
             type: 'select',
             options: [
-                { label: 'Listing', value: 'listing' },
+                { label: 'Property', value: 'property' },
                 { label: 'Order', value: 'order' },
                 { label: 'Voucher', value: 'voucher' },
                 { label: 'Article', value: 'article' },

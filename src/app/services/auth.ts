@@ -1,9 +1,5 @@
-import axios from 'axios'
 import type { AxiosRequestConfig } from 'axios'
-
-type ApiErrorResponse = {
-  error?: string
-}
+import { postJSON, getJSON } from '@/app/lib/http'
 
 export type SignInResponse = {
   user: {
@@ -15,6 +11,18 @@ export type SignInResponse = {
   }
 }
 
+export type ProfileResponse = {
+  id: string | number
+  user: string | number
+  displayName?: string
+  dateOfBirth?: string
+  gender?: string
+  bio?: string
+  address?: string
+  provinceCode?: string
+  wardCode?: string
+}
+
 export type RegisterPayload = {
   fullName: string
   email: string
@@ -23,52 +31,29 @@ export type RegisterPayload = {
 
 // Register
 export async function register(data: RegisterPayload, config?: AxiosRequestConfig): Promise<SignInResponse> {
-  try {
-    const response = await axios.post<SignInResponse>('/api/users', data, config)
-
-    return response.data
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      const payload = error.response?.data as ApiErrorResponse | undefined
-      const errorMessage = payload?.error ?? error.message
-
-      throw new Error(errorMessage)
-    }
-
-    throw error
-  }
+  return postJSON<SignInResponse, RegisterPayload>('/api/users', data, config)
 }
 
 // Sign in
 export async function signIn(email: string, password: string, config?: AxiosRequestConfig): Promise<SignInResponse> {
-  try {
-    const response = await axios.post<SignInResponse>('/api/users/login', { email, password }, config)
-
-    return response.data
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      const payload = error.response?.data as ApiErrorResponse | undefined
-      const errorMessage = payload?.error ?? error.message
-
-      throw new Error(errorMessage)
-    }
-
-    throw error
-  }
+  return postJSON<SignInResponse, { email: string; password: string }>(
+    '/api/users/login',
+    { email, password },
+    config,
+  )
 }
 
 // Sign out
 export async function signOut(config?: AxiosRequestConfig): Promise<void> {
+  await postJSON<unknown, Record<string, never>>('/api/users/logout', {}, config)
+}
+
+// Fetch current user's profile
+export async function fetchMyProfile(config?: AxiosRequestConfig): Promise<ProfileResponse | null> {
   try {
-    await axios.post('/api/users/logout', {}, config)
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      const payload = error.response?.data as ApiErrorResponse | undefined
-      const errorMessage = payload?.error ?? error.message
-
-      throw new Error(errorMessage)
-    }
-
-    throw error
+    const response = await getJSON<{ profile: ProfileResponse | null }>('/api/me/profile', config)
+    return response.profile
+  } catch {
+    return null // Profile optional
   }
 }

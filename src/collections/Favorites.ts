@@ -3,11 +3,17 @@ import type { CollectionConfig } from 'payload'
 
 import { ownerOrAdmin, adminOnly } from '@/access'
 
-export const SavedListings: CollectionConfig = {
-    slug: 'saved-listings',
+export const Favorites: CollectionConfig = {
+    slug: 'favorites',
     admin: {
-        defaultColumns: ['user', 'listing', 'createdAt'],
+        defaultColumns: ['user', 'property', 'createdAt'],
     },
+    indexes: [
+        {
+            fields: ['user', 'property'],
+            unique: true,
+        },
+    ],
     access: {
         create: ownerOrAdmin('user'),
         read: ownerOrAdmin('user'),
@@ -23,27 +29,27 @@ export const SavedListings: CollectionConfig = {
             index: true,
         },
         {
-            name: 'listing',
+            name: 'property',
             type: 'relationship',
-            relationTo: 'listings',
+            relationTo: 'properties',
             required: true,
         },
     ],
     hooks: {
-        // Ngăn lưu trùng
+        // Ngăn yêu thích trùng
         beforeChange: [
             async ({ data, operation, req }) => {
-                if (operation === 'create' && data?.user && data?.listing) {
+                if (operation === 'create' && data?.user && data?.property) {
                     const existing = await req.payload.find({
-                        collection: 'saved-listings',
+                        collection: 'favorites',
                         where: {
                             user: { equals: data.user },
-                            listing: { equals: data.listing },
+                            property: { equals: data.property },
                         },
                         limit: 1,
                     })
                     if (existing.docs.length > 0) {
-                        throw new Error('Đã lưu tin này rồi')
+                        throw new Error('Đã yêu thích tin này rồi')
                     }
                 }
                 return data

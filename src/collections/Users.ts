@@ -47,9 +47,11 @@ export const Users: CollectionConfig = {
       maxLength: 20,
     },
     {
-      name: 'avatar',
-      type: 'upload',
-      relationTo: 'media',
+      name: 'avatar_id',
+      type: 'text',
+      admin: {
+        description: 'URL ảnh đại diện từ bucket/Avatar',
+      },
     },
 
     // --- Role (hardcode, không tạo collection riêng) ---

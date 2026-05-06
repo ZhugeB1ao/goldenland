@@ -7,6 +7,8 @@ import config from '@/payload.config' // Payload configuration
 import './styles.css'
 import Footer from './components/Footer'
 import Header from './components/Header'
+import PendingFavoriteToast from './home/components/PendingFavoriteToast'
+import ReduxProvider from './store/provider'
 
 // SEO metadata for the app
 export const metadata = {
@@ -20,9 +22,11 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
 
   // Store current logged-in user
   let currentUser: {
-    email?: string | null
     id?: number | string
-    name?: string | null
+    email?: string | null
+    fullName?: string | null
+    phone?: string | null
+    avatarUrl?: string | null
   } | null = null
 
   try {
@@ -40,7 +44,9 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
       ? {
           id: user.id,
           email: user.email,
-          name: (user as { name?: string | null }).name ?? null,
+          fullName: (user as { fullName?: string | null }).fullName ?? null,
+          phone: (user as { phone?: string | null }).phone ?? null,
+          avatarUrl: (user as { avatar_id?: string | null }).avatar_id ?? null,
         }
       : null
   } catch {
@@ -65,14 +71,17 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
       </head>
 
       <body className="bg-background text-on-surface font-body">
-        {/* Pass user to Header */}
-        <Header user={currentUser} />
+        <ReduxProvider user={currentUser}>
+          {/* No user prop to Header anymore */}
+          <Header />
+          <PendingFavoriteToast />
 
-        {/* Render page content */}
-        <main>{children}</main>
+          {/* Render page content */}
+          <main>{children}</main>
 
-        {/* Footer */}
-        <Footer />
+          {/* Footer */}
+          <Footer />
+        </ReduxProvider>
       </body>
     </html>
   )

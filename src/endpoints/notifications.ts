@@ -14,10 +14,28 @@ export const markNotificationRead: Endpoint = {
         }
 
         try {
+            const result = await payload.find({
+                collection: 'notifications',
+                where: {
+                    and: [{ id: { equals: id } }, { user: { equals: user.id } }],
+                },
+                limit: 1,
+                overrideAccess: false,
+                req,
+            })
+
+            const notification = result.docs[0]
+
+            if (!notification) {
+                return Response.json({ error: 'Không tìm thấy thông báo' }, { status: 404 })
+            }
+
             await payload.update({
                 collection: 'notifications',
-                id,
+                id: notification.id,
                 data: { isRead: true },
+                overrideAccess: false,
+                req,
             })
             return Response.json({ success: true })
         } catch (error: any) {
@@ -44,6 +62,8 @@ export const markAllNotificationsRead: Endpoint = {
                     and: [{ user: { equals: user.id } }, { isRead: { equals: false } }],
                 },
                 limit: 1000,
+                overrideAccess: false,
+                req,
             })
 
             for (const notif of unread.docs) {
@@ -51,6 +71,8 @@ export const markAllNotificationsRead: Endpoint = {
                     collection: 'notifications',
                     id: notif.id,
                     data: { isRead: true },
+                    overrideAccess: false,
+                    req,
                 })
             }
 
@@ -79,6 +101,8 @@ export const countUnreadNotifications: Endpoint = {
                     and: [{ user: { equals: user.id } }, { isRead: { equals: false } }],
                 },
                 limit: 0,
+                overrideAccess: false,
+                req,
             })
 
             return Response.json({ count: result.totalDocs })

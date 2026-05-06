@@ -57,9 +57,9 @@ export const Orders: CollectionConfig = {
             },
         },
         {
-            name: 'listing',
+            name: 'property',
             type: 'relationship',
-            relationTo: 'listings',
+            relationTo: 'properties',
             admin: {
                 description: 'Tin đăng liên quan (nếu đăng tin lẻ)',
                 condition: (data) => data?.orderType === 'single_post',

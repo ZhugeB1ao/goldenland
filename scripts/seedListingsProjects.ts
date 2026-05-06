@@ -256,7 +256,7 @@ const getOrCreateSeedUser = async (payload: any): Promise<BasicDoc> => {
   return createdUser as BasicDoc
 }
 
-const resetCollectionBySlugs = async (payload: any, collection: 'projects' | 'listings', slugs: string[]) => {
+const resetCollectionBySlugs = async (payload: any, collection: 'projects' | 'properties', slugs: string[]) => {
   await payload.delete({
     collection,
     where: {
@@ -275,7 +275,7 @@ async function run() {
 
   await resetCollectionBySlugs(
     payload,
-    'listings',
+    'properties',
     seedListings.map((item) => item.slug),
   )
   await resetCollectionBySlugs(
@@ -316,7 +316,7 @@ async function run() {
     }
 
     await payload.create({
-      collection: 'listings',
+      collection: 'properties',
       data: data as any,
     })
   }

@@ -65,11 +65,6 @@ export const Profiles: CollectionConfig = {
                     maxLength: 20,
                 },
                 {
-                    name: 'districtCode',
-                    type: 'text',
-                    maxLength: 20,
-                },
-                {
                     name: 'wardCode',
                     type: 'text',
                     maxLength: 20,

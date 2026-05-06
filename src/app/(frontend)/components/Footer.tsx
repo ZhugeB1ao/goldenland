@@ -108,7 +108,7 @@ export default function Footer() {
             </li>
             <li className="flex items-center gap-3 text-sm text-zinc-500">
               <span className="material-symbols-outlined text-lg text-primary">call</span>
-              1900 1888
+              1900 1907
             </li>
             <li className="flex items-center gap-3 text-sm text-zinc-500">
               <span className="material-symbols-outlined text-lg text-primary">mail</span>
@@ -120,7 +120,7 @@ export default function Footer() {
 
       <div className="mx-auto flex max-w-screen-2xl flex-col items-center justify-between gap-4 border-t border-zinc-100 px-8 pt-8 md:flex-row">
         <p className="font-lexend text-sm text-zinc-500">
-          © 2024 Goldenland. Nền tảng thông tin bất động sản và tuyển chọn kiến trúc.
+          © 2026 Goldenland. Nền tảng thông tin bất động sản và tuyển chọn kiến trúc.
         </p>
         <div className="flex gap-6">
           <a

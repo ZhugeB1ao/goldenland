@@ -1,65 +1,66 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import useEmblaCarousel from 'embla-carousel-react'
+import { fetchFeaturedArticlesBasedOnCategoryId } from '@/app/services/articles'
 
 type NewsItem = {
+  id: string | number
   title: string
   image: string
   imageAlt: string
   date: string
 }
 
-const newsItems: NewsItem[] = [
-  {
-    title: 'Trục đại lộ 60m tại TP.HCM sắp có trung tâm thương mại mới cạnh AEON Mall',
-    image:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuAECDzXZezrcelq6C5EWlWkmf219bNNXLvGeMrDp4Y_IxbuAKz1iRBB_x22ZEJcdFLsSzUlChYFjTNDUfI-P52eRlUmT6A3rlHdqRIBP0sq738R0HlWeP-Gz_nh7GzDZEXHLvra6ho1GTfLx4BHypcMWfZd6nFATGGzOvRdahnSoX-wIJBswYxX5wvCBC17zUXDCVMgatFSA0wtPfOxTJCF3ifKAbSDGtyVyaclvhgdaR5f6gOWm2UQpL5Uhri2TBwotYefZI9mHazu',
-    imageAlt: 'Trục đại lộ 60m tại TP.HCM',
-    date: '12 Tháng 03, 2026',
-  },
-  {
-    title: 'Giải thưởng Bất động sản Việt Nam PropertyGuru lần thứ 12 chính thức khởi động',
-    image:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuAECDzXZezrcelq6C5EWlWkmf219bNNXLvGeMrDp4Y_IxbuAKz1iRBB_x22ZEJcdFLsSzUlChYFjTNDUfI-P52eRlUmT6A3rlHdqRIBP0sq738R0HlWeP-Gz_nh7GzDZEXHLvra6ho1GTfLx4BHypcMWfZd6nFATGGzOvRdahnSoX-wIJBswYxX5wvCBC17zUXDCVMgatFSA0wtPfOxTJCF3ifKAbSDGtyVyaclvhgdaR5f6gOWm2UQpL5Uhri2TBwotYefZI9mHazu',
-    imageAlt: 'Giải thưởng Bất động sản Việt Nam',
-    date: '10 Tháng 03, 2026',
-  },
-  {
-    title: 'Thị trường bất động sản: "Nơi trú ẩn an toàn" giữa biến động kinh tế toàn cầu',
-    image:
-      'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80',
-    imageAlt: 'Thị trường bất động sản',
-    date: '08 Tháng 03, 2026',
-  },
-  {
-    title: 'Nguồn cung căn hộ trung tâm tăng trở lại, người mua có thêm nhiều lựa chọn',
-    image:
-      'https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=1200&q=80',
-    imageAlt: 'Nguồn cung căn hộ trung tâm',
-    date: '06 Tháng 03, 2026',
-  },
-  {
-    title: 'Nhiều địa phương công bố bảng giá đất mới, tác động đến chiến lược đầu tư 2026',
-    image:
-      'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=80',
-    imageAlt: 'Bảng giá đất mới',
-    date: '04 Tháng 03, 2026',
-  },
-  {
-    title: 'Dòng tiền dịch chuyển về vùng ven có hạ tầng mới, phân khúc nhà phố được quan tâm',
-    image:
-      'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80',
-    imageAlt: 'Dòng tiền dịch chuyển về vùng ven',
-    date: '02 Tháng 03, 2026',
-  },
-]
+const fallbackImage =
+  'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80'
 
-export function RealEstateNewsSection() {
+const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+})
+
+export function RealEstateArticlesSection() {
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([])
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: 'start',
     loop: true,
     slidesToScroll: 1,
   })
+
+  useEffect(() => {
+    let isMounted = true
+
+    const fetchNews = async () => {
+      try {
+        const featuredArticles = await fetchFeaturedArticlesBasedOnCategoryId(6)
+        if (!isMounted) return
+
+        setNewsItems(
+          featuredArticles.map((article) => ({
+            id: article.id,
+            title: article.title,
+            image: article.imageUrl ?? fallbackImage,
+            imageAlt: article.title,
+            date: dateFormatter.format(new Date(article.updatedAt)),
+          })),
+        )
+
+        console.log('Fetched news items:', featuredArticles)
+      } catch {
+        if (isMounted) {
+          setNewsItems([])
+        }
+      }
+    }
+
+    void fetchNews()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   const handlePrev = () => emblaApi?.scrollPrev()
 
@@ -100,7 +101,7 @@ export function RealEstateNewsSection() {
 
                 return (
                   <article
-                    key={`${news.title}-${order}`}
+                    key={String(news.id)}
                     className="group min-w-0 shrink-0 basis-full cursor-pointer px-3 md:basis-1/2 lg:basis-1/3"
                   >
                     <div className="mb-6 overflow-hidden rounded-xl">

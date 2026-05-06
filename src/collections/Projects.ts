@@ -124,10 +124,6 @@ export const Projects: CollectionConfig = {
                                     type: 'text',
                                 },
                                 {
-                                    name: 'districtCode',
-                                    type: 'text',
-                                },
-                                {
                                     name: 'wardCode',
                                     type: 'text',
                                 },
@@ -260,10 +256,30 @@ export const Projects: CollectionConfig = {
                             ],
                         },
                         {
+                            name: 'saleStatus',
+                            type: 'select',
+                            defaultValue: 'active',
+                            options: [
+                                { label: 'Đang mở bán', value: 'active' },
+                                { label: 'Sắp mở bán', value: 'upcoming' },
+                                { label: 'Đã bàn giao', value: 'completed' },
+                            ],
+                            admin: { description: 'Trạng thái mở bán (hiển thị cho khách)' },
+                        },
+                        {
                             name: 'isFeatured',
                             type: 'checkbox',
                             defaultValue: false,
                             admin: { description: 'Hiển thị ở trang chủ' },
+                        },
+                        {
+                            name: 'views',
+                            type: 'number',
+                            defaultValue: 0,
+                            admin: {
+                                description: 'Lượt xem (tự động cập nhật)',
+                                readOnly: true,
+                            },
                         },
                     ],
                 },

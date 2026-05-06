@@ -15,39 +15,49 @@ export const myDashboard: Endpoint = {
             // Đếm tin đăng của tôi theo status
             const [active, pending, expired, sold, drafts] = await Promise.all([
                 payload.find({
-                    collection: 'listings',
+                    collection: 'properties',
                     where: {
                         and: [{ user: { equals: user.id } }, { status: { equals: 'active' } }],
                     },
                     limit: 0,
+                    overrideAccess: false,
+                    req,
                 }),
                 payload.find({
-                    collection: 'listings',
+                    collection: 'properties',
                     where: {
                         and: [{ user: { equals: user.id } }, { status: { equals: 'pending' } }],
                     },
                     limit: 0,
+                    overrideAccess: false,
+                    req,
                 }),
                 payload.find({
-                    collection: 'listings',
+                    collection: 'properties',
                     where: {
                         and: [{ user: { equals: user.id } }, { status: { equals: 'expired' } }],
                     },
                     limit: 0,
+                    overrideAccess: false,
+                    req,
                 }),
                 payload.find({
-                    collection: 'listings',
+                    collection: 'properties',
                     where: {
                         and: [{ user: { equals: user.id } }, { status: { equals: 'sold' } }],
                     },
                     limit: 0,
+                    overrideAccess: false,
+                    req,
                 }),
                 payload.find({
-                    collection: 'listings',
+                    collection: 'properties',
                     where: {
                         and: [{ user: { equals: user.id } }, { status: { equals: 'draft' } }],
                     },
                     limit: 0,
+                    overrideAccess: false,
+                    req,
                 }),
             ])
 
@@ -58,13 +68,17 @@ export const myDashboard: Endpoint = {
                     and: [{ user: { equals: user.id } }, { status: { equals: 'active' } }],
                 },
                 limit: 0,
+                overrideAccess: false,
+                req,
             })
 
-            // Đếm tin đã lưu
-            const saved = await payload.find({
-                collection: 'saved-listings',
+            // Đếm tin yêu thích
+            const favorites = await payload.find({
+                collection: 'favorites',
                 where: { user: { equals: user.id } },
                 limit: 0,
+                overrideAccess: false,
+                req,
             })
 
             // Đếm thông báo chưa đọc
@@ -74,6 +88,8 @@ export const myDashboard: Endpoint = {
                     and: [{ user: { equals: user.id } }, { isRead: { equals: false } }],
                 },
                 limit: 0,
+                overrideAccess: false,
+                req,
             })
 
             // 5 order gần nhất
@@ -82,11 +98,13 @@ export const myDashboard: Endpoint = {
                 where: { user: { equals: user.id } },
                 sort: '-createdAt',
                 limit: 5,
+                overrideAccess: false,
+                req,
             })
 
             return Response.json({
                 balance: user.balance || 0,
-                listings: {
+                properties: {
                     active: active.totalDocs,
                     pending: pending.totalDocs,
                     expired: expired.totalDocs,
@@ -95,7 +113,7 @@ export const myDashboard: Endpoint = {
                     total: active.totalDocs + pending.totalDocs + expired.totalDocs + sold.totalDocs + drafts.totalDocs,
                 },
                 vouchersActive: vouchers.totalDocs,
-                savedListings: saved.totalDocs,
+                favoriteProperties: favorites.totalDocs,
                 unreadNotifications: unreadNotifs.totalDocs,
                 recentOrders: recentOrders.docs,
             })

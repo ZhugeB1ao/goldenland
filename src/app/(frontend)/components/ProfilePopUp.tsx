@@ -1,4 +1,8 @@
 import { useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { useRouter } from 'next/navigation'
+import { signOutThunk, selectUser } from '../store/slices/authSlice'
+import type { RootState, AppDispatch } from '../store'
 
 const Crown = () => (
   <svg viewBox="0 0 24 24" fill="none" className="w-8 h-8">
@@ -176,7 +180,15 @@ const settingItems = [
 ]
 
 export default function ProfilePopUp() {
+  const dispatch = useDispatch<AppDispatch>()
+  const router = useRouter()
+  const user = useSelector((state: RootState) => selectUser(state as any))
   const [activeItem, setActiveItem] = useState<number | null>(null)
+
+  const handleLogout = async () => {
+    await dispatch(signOutThunk())
+    router.refresh()
+  }
 
   return (
     <div
@@ -226,7 +238,7 @@ export default function ProfilePopUp() {
 
       {/* Username */}
       <div className="px-4 py-3 border-b border-gray-100">
-        <p className="font-semibold text-gray-800 text-[15px]">Gia Bảo</p>
+        <p className="font-semibold text-gray-800 text-[15px]">{user?.fullName || user?.email || 'User'}</p>
       </div>
 
       {/* Main Menu */}
@@ -265,7 +277,13 @@ export default function ProfilePopUp() {
         {settingItems.map((item, idx) => (
           <button
             key={idx}
-            onClick={() => setActiveItem(menuItems.length + idx)}
+            onClick={() => {
+              if (item.label === 'Đăng xuất') {
+                handleLogout()
+              } else {
+                setActiveItem(menuItems.length + idx)
+              }
+            }}
             className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors duration-150 group
                 ${activeItem === menuItems.length + idx ? 'bg-red-50' : 'hover:bg-gray-50'}`}
           >
