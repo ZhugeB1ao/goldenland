@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { adminOnly, adminOnlyField, selfOrAdminByID } from '@/access'
+import { adminOnly, adminOnlyField, checkAdmin, selfOrAdminByID } from '@/access'
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -9,6 +9,7 @@ export const Users: CollectionConfig = {
   },
   auth: true,
   access: {
+    admin: checkAdmin,
     create: () => true,
     read: ({ req: { user } }) => {
       if (!user) return false
@@ -60,6 +61,7 @@ export const Users: CollectionConfig = {
       type: 'select',
       defaultValue: 'user',
       required: true,
+      saveToJWT: true,
       access: {
         update: adminOnlyField,
       },

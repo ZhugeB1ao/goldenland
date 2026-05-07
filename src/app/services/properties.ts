@@ -31,13 +31,21 @@ export type NewPropertiesResponse = {
   hasMore: boolean
 }
 
+export type PropertiesByIdsResponse = Property[]
+
 // Exporting list of properties, limit to 100 properties.
 export async function fetchProperties(config?: AxiosRequestConfig): Promise<PropertiesResponse> {
   return getJSON<PropertiesResponse>('/api/properties', config)
 }
 // Exporting property detail by id.
 export async function fetchPropertyDetail(id: string, config?: AxiosRequestConfig): Promise<PropertyDetailResponse> {
-  return getJSON<PropertyDetailResponse>(`/api/properties/${id}`, config)
+  const response = await getJSON<Property | PropertyDetailResponse>(`/api/properties/${id}`, config)
+
+  if (response && typeof response === 'object' && 'property' in response) {
+    return response as PropertyDetailResponse
+  }
+
+  return { property: response as Property }
 }
 
 // Exporting new properties base on createdAt field, sorted by createdAt in descending order, limit to 8 properties. Client can sent limit = 8 to get next 8 properties, and so on. If limit is not sent, default to 8 properties.
@@ -63,6 +71,27 @@ export async function fetchNewProperties(
     totalDocs: response.totalDocs,
     hasMore: response.hasNextPage,
   }
+}
+
+export async function fetchPropertiesByIds(
+  ids: Array<number | string>,
+  config?: AxiosRequestConfig,
+): Promise<PropertiesByIdsResponse> {
+  if (!ids.length) return []
+
+  const query = buildQuery({
+    where: {
+      id: {
+        in: ids,
+      },
+    },
+    limit: ids.length,
+    depth: 0,
+  })
+
+  const response = await getJSON<PayloadFindResponse<Property>>(`/api/properties${query}`, config)
+
+  return response.docs
 }
 
 export type PropertiesCountByLocationResponse = number

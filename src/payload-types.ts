@@ -637,6 +637,8 @@ export interface Package {
    */
   name: string;
   description?: string | null;
+  subtitle?: string | null;
+  isBestSeller?: boolean | null;
   /**
    * Giá gói (VNĐ)
    */
@@ -658,9 +660,25 @@ export interface Package {
    */
   propertyDurationDays: number;
   /**
-   * Số voucher tặng kèm khi mua gói
+   * Danh sách voucher tặng kèm khi mua gói
    */
-  bonusVouchers?: number | null;
+  bonusVouchers?:
+    | {
+        /**
+         * Số lượng
+         */
+        quantity?: number | null;
+        /**
+         * Giá trị giảm giá (VNĐ)
+         */
+        discountValue?: number | null;
+        /**
+         * Loại tin được áp dụng voucher
+         */
+        appliedFor?: ('normal' | 'vip' | 'special') | null;
+        id?: string | null;
+      }[]
+    | null;
   /**
    * Danh sách tính năng gói
    */
@@ -1260,12 +1278,21 @@ export interface ReportsSelect<T extends boolean = true> {
 export interface PackagesSelect<T extends boolean = true> {
   name?: T;
   description?: T;
+  subtitle?: T;
+  isBestSeller?: T;
   price?: T;
   originalPrice?: T;
   totalProperties?: T;
   durationDays?: T;
   propertyDurationDays?: T;
-  bonusVouchers?: T;
+  bonusVouchers?:
+    | T
+    | {
+        quantity?: T;
+        discountValue?: T;
+        appliedFor?: T;
+        id?: T;
+      };
   features?:
     | T
     | {

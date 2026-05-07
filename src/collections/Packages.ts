@@ -6,7 +6,7 @@ export const Packages: CollectionConfig = {
     slug: 'packages',
     admin: {
         useAsTitle: 'name',
-        defaultColumns: ['name', 'price', 'totalProperties', 'bonusVouchers', 'isActive'],
+        defaultColumns: ['name', 'price', 'totalListings', 'bonusVouchers', 'isActive'],
     },
     access: {
         create: adminOnly,
@@ -25,6 +25,15 @@ export const Packages: CollectionConfig = {
         {
             name: 'description',
             type: 'textarea',
+        },
+        {
+            name: 'subtitle',
+            type: 'text',
+        },
+        {
+            name: 'isBestSeller',
+            type: 'checkbox',
+            defaultValue: false,
         },
         {
             type: 'row',
@@ -73,9 +82,34 @@ export const Packages: CollectionConfig = {
         },
         {
             name: 'bonusVouchers',
-            type: 'number',
-            defaultValue: 0,
-            admin: { description: 'Số voucher tặng kèm khi mua gói' },
+            type: 'array',
+            admin: { description: 'Danh sách voucher tặng kèm khi mua gói' },
+            fields: [
+                {
+                    name: 'quantity',
+                    type: 'number',
+                    min: 1,
+                    defaultValue: 1,
+                    admin: { description: 'Số lượng' },
+                },
+                {
+                    name: 'discountValue',
+                    type: 'number',
+                    min: 0,
+                    defaultValue: 0,
+                    admin: { description: 'Giá trị giảm giá (VNĐ)' },
+                },
+                {
+                    name: 'appliedFor',
+                    type: 'select',
+                    options: [
+                        { label: 'Tin thường', value: 'normal' },
+                        { label: 'Tin VIP', value: 'vip' },
+                        { label: 'Tin đặc biệt', value: 'special' },
+                    ],
+                    admin: { description: 'Loại tin được áp dụng voucher' },
+                },
+            ],
         },
         {
             name: 'features',
@@ -87,6 +121,12 @@ export const Packages: CollectionConfig = {
                     type: 'text',
                     required: true,
                 },
+                // {
+                //     name: 'isAvailable',
+                //     type: 'checkbox',
+                //     defaultValue: true,
+                //     admin: { description: 'Tính năng này có khả dụng không?' },
+                // },
             ],
         },
         {

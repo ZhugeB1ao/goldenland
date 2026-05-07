@@ -44,23 +44,21 @@ const DUMMY_IMAGE_URLS = [
   'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&q=80',
 ]
 
-// Location Mocks (Ho Chi Minh City and Hanoi approx)
+// Location Mocks (aligned with vietnam-divisions dataset)
 const LOCATIONS = [
-  { provinceCode: '79', wardCode: '26740', street: 'Nguyễn Huệ', district: 'Quận 1', city: 'TP. Hồ Chí Minh', baseLat: 10.7732, baseLng: 106.7034 },
-  { provinceCode: '79', wardCode: '26743', street: 'Lê Duẩn', district: 'Quận 1', city: 'TP. Hồ Chí Minh', baseLat: 10.7828, baseLng: 106.6993 },
-  { provinceCode: '79', wardCode: '26875', street: 'Nguyễn Thị Minh Khai', district: 'Quận 3', city: 'TP. Hồ Chí Minh', baseLat: 10.7769, baseLng: 106.6951 },
-  
-  { provinceCode: '1', wardCode: '00001', street: 'Tràng Tiền', district: 'Quận Hoàn Kiếm', city: 'Hà Nội', baseLat: 21.0253, baseLng: 105.8524 },
-  { provinceCode: '1', wardCode: '00025', street: 'Kim Mã', district: 'Quận Ba Đình', city: 'Hà Nội', baseLat: 21.0315, baseLng: 105.8202 },
-  
-  { provinceCode: '48', wardCode: '20230', street: 'Võ Nguyên Giáp', district: 'Quận Sơn Trà', city: 'Đà Nẵng', baseLat: 16.0601, baseLng: 108.2435 },
-  { provinceCode: '48', wardCode: '20194', street: 'Bạch Đằng', district: 'Quận Hải Châu', city: 'Đà Nẵng', baseLat: 16.0664, baseLng: 108.2231 },
+  { provinceCode: '79', wardCode: '25747', street: 'Nguyễn Huệ', district: 'Quận 1', city: 'TP. Hồ Chí Minh', baseLat: 10.7732, baseLng: 106.7034 },
+  { provinceCode: '79', wardCode: '25750', street: 'Lê Duẩn', district: 'Quận 1', city: 'TP. Hồ Chí Minh', baseLat: 10.7828, baseLng: 106.6993 },
+  { provinceCode: '79', wardCode: '25813', street: 'Nguyễn Thị Minh Khai', district: 'Quận 3', city: 'TP. Hồ Chí Minh', baseLat: 10.7769, baseLng: 106.6951 },
 
-  { provinceCode: '74', wardCode: '25834', street: 'Đại lộ Bình Dương', district: 'TP. Thủ Dầu Một', city: 'Bình Dương', baseLat: 10.9806, baseLng: 106.6745 },
-  { provinceCode: '74', wardCode: '25846', street: 'Phạm Ngọc Thạch', district: 'TP. Thủ Dầu Một', city: 'Bình Dương', baseLat: 11.0022, baseLng: 106.6661 },
+  { provinceCode: '01', wardCode: '00070', street: 'Tràng Tiền', district: 'Quận Hoàn Kiếm', city: 'Hà Nội', baseLat: 21.0253, baseLng: 105.8524 },
+  { provinceCode: '01', wardCode: '00025', street: 'Kim Mã', district: 'Quận Ba Đình', city: 'Hà Nội', baseLat: 21.0315, baseLng: 105.8202 },
 
-  { provinceCode: '77', wardCode: '26155', street: 'Đồng Khởi', district: 'TP. Biên Hòa', city: 'Đồng Nai', baseLat: 10.9575, baseLng: 106.8427 },
-  { provinceCode: '77', wardCode: '26161', street: 'Phạm Văn Thuận', district: 'TP. Biên Hòa', city: 'Đồng Nai', baseLat: 10.9416, baseLng: 106.8306 },
+  { provinceCode: '48', wardCode: '20242', street: 'Bạch Đằng', district: 'Quận Hải Châu', city: 'Đà Nẵng', baseLat: 16.0664, baseLng: 108.2231 },
+  { provinceCode: '48', wardCode: '20263', street: 'Võ Nguyên Giáp', district: 'Quận Sơn Trà', city: 'Đà Nẵng', baseLat: 16.0601, baseLng: 108.2435 },
+
+  { provinceCode: '75', wardCode: '26248', street: 'Đồng Khởi', district: 'TP. Biên Hòa', city: 'Đồng Nai', baseLat: 10.9575, baseLng: 106.8427 },
+  { provinceCode: '75', wardCode: '26341', street: 'Phạm Văn Thuận', district: 'TP. Biên Hòa', city: 'Đồng Nai', baseLat: 10.9416, baseLng: 106.8306 },
+  { provinceCode: '75', wardCode: '26485', street: 'Đại lộ Bình Dương', district: 'TP. Thủ Dầu Một', city: 'Bình Dương', baseLat: 10.9806, baseLng: 106.6745 },
 ]
 
 const getRandomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min
@@ -100,6 +98,12 @@ async function seed() {
   }
 
   const userIds = users.map((user) => user.id)
+  const ownerUser = users.find((user) => user.id === 1 || user.id === '1')
+
+  if (!ownerUser) {
+    console.error('User id=1 not found. Please seed users or adjust the target user id.')
+    process.exit(1)
+  }
 
   const { docs: projects } = await payload.find({
     collection: 'projects',
@@ -110,6 +114,7 @@ async function seed() {
   const projectIds = projects.map((project) => project.id)
 
   console.log(`Loaded ${userIds.length} users and ${projectIds.length} projects for random assignment.`)
+  console.log(`All seeded properties will be assigned to user id=${ownerUser.id}.`)
 
   console.log('Downloading dummy images into memory...')
   const imageBuffers: ArrayBuffer[] = []
@@ -169,7 +174,7 @@ async function seed() {
     const area = getRandomInt(30, 300)
     const bedrooms = propertyType === 'land' || propertyType === 'warehouse' ? 0 : getRandomInt(1, 5)
     const bathrooms = propertyType === 'land' || propertyType === 'warehouse' ? 0 : getRandomInt(1, 4)
-    const userId = getRandomItem(userIds)
+    const userId = ownerUser.id
 
 
     const isVerified = getRandomBoolean()

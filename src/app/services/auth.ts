@@ -4,10 +4,11 @@ import { postJSON, getJSON } from '@/app/lib/http'
 export type SignInResponse = {
   user: {
     id: number | string
-    email: string,
-    fullName?: string,
-    phone?: string,
-    avatarUrl?: string,
+    email: string
+    role?: 'admin' | 'user'
+    fullName?: string
+    phone?: string
+    avatarUrl?: string
   }
 }
 
