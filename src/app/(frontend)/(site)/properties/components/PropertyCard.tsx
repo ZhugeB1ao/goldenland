@@ -4,7 +4,7 @@ import type { Property } from '@/payload-types'
 import { useDispatch, useSelector } from 'react-redux'
 import { toggleFavoriteThunk, selectFavoriteIdSet } from '@/app/store/slices/favoritesSlice'
 import type { AppDispatch, RootState } from '@/app/store'
-import { formatPrice, formatLocation, FALLBACK_IMAGE } from '../lib/utils'
+import { formatPrice, formatProvince, FALLBACK_IMAGE } from '../lib/utils'
 import Link from 'next/link'
 
 interface PropertyCardProps {
@@ -16,12 +16,36 @@ export function PropertyCard({ property }: PropertyCardProps) {
   const favoriteIdSet = useSelector((state: RootState) => selectFavoriteIdSet(state))
   const isFavorite = favoriteIdSet.has(property.id)
 
+  const userInfo = typeof property.user === 'object' ? property.user : null
+  const userName = userInfo?.fullName || userInfo?.email || 'Người đăng'
+  const userPhone = userInfo?.phone || 'Đang cập nhật'
+  const avatarUrl = userInfo?.avatar_id
+
   const firstImage = property.images?.[0]?.image
   const imageUrl = typeof firstImage === 'string' ? firstImage : FALLBACK_IMAGE
 
   const priceLabel = formatPrice(property)
-  const locationLabel = formatLocation(property)
+  const provinceLabel = formatProvince(property)
   const areaLabel = property.area ? `${property.area} m²` : 'Đang cập nhật'
+  const descriptionLabel = property.description?.trim() || 'Chưa có mô tả'
+  const pricePerM2Label = (() => {
+    if (
+      !property.price ||
+      !property.area ||
+      property.area <= 0 ||
+      property.priceUnit === 'negotiable'
+    ) {
+      return 'Đang cập nhật'
+    }
+
+    const base = property.priceUnit === 'per_m2' ? property.price : property.price / property.area
+    const million = base / 1_000_000
+    const formatter = new Intl.NumberFormat('vi-VN', {
+      maximumFractionDigits: million < 1 ? 2 : 1,
+    })
+
+    return `${formatter.format(million)} triệu/m²`
+  })()
 
   return (
     <article className="bg-white rounded-xl overflow-hidden border border-outline-variant/30 flex flex-col shadow-sm hover:shadow-md transition-shadow">
@@ -84,28 +108,52 @@ export function PropertyCard({ property }: PropertyCardProps) {
         <div className="flex items-center gap-4 mb-4">
           <div className="text-primary font-bold font-lexend text-lg">{priceLabel}</div>
           <div className="text-primary font-bold font-lexend text-lg">{areaLabel}</div>
-        </div>
-
-        <div className="flex items-center gap-1 text-secondary text-sm mb-4">
-          <span className="material-symbols-outlined text-lg shrink-0 text-secondary/70">
-            location_on
+          <div className="flex flex-wrap items-center gap-3 text-xs text-secondary ">
+          <span className="inline-flex items-center gap-1">
+            <span className="material-symbols-outlined text-[14px]">square_foot</span>
+            {pricePerM2Label}
           </span>
-          <span className="truncate">{locationLabel}</span>
+          <span className="inline-flex items-center gap-1">
+            <span className="material-symbols-outlined text-[14px]">bed</span>
+            {property.bedrooms ?? '—'} PN
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="material-symbols-outlined text-[14px]">bathtub</span>
+            {property.bathrooms ?? '—'} WC
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="material-symbols-outlined text-[14px]">location_on</span>
+            {provinceLabel}
+          </span>
+        </div>
         </div>
 
-        <div className="mt-auto pt-4 border-t border-outline-variant/30 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-xs font-bold text-secondary">
-              {typeof property.user === 'object'
-                ? property.user.email?.charAt(0).toUpperCase()
-                : 'U'}
+        <p className="text-sm text-secondary mb-4 line-clamp-2">{descriptionLabel}</p>
+
+        
+
+        <div className="mt-auto pt-4 border-t border-outline-variant/30 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-9 h-9 rounded-full overflow-hidden bg-surface-container-high flex items-center justify-center text-xs font-bold text-secondary shrink-0">
+              {avatarUrl ? (
+                <img alt={userName} className="w-full h-full object-cover" src={avatarUrl} />
+              ) : (
+                <span>{userName.charAt(0).toUpperCase()}</span>
+              )}
             </div>
-            <span className="text-xs text-secondary font-medium">
-              {typeof property.user === 'object' ? property.user.email : 'Người đăng'}
-            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-on-surface truncate">{userName}</p>
+              <p className="text-[11px] text-secondary truncate">{userPhone}</p>
+            </div>
           </div>
-          <span className="text-[11px] text-secondary/60">
-            {new Date(property.createdAt).toLocaleDateString('vi-VN')}
+          <span className="text-[11px] text-secondary/60 shrink-0">
+            {new Date(property.createdAt).toLocaleString('vi-VN', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
           </span>
         </div>
       </div>

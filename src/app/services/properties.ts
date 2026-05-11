@@ -15,6 +15,17 @@ type PayloadFindResponse<T> = {
   hasNextPage: boolean
 }
 
+type SearchPropertiesResponse = {
+  success: boolean
+  data: Property[]
+  pagination: {
+    page: number
+    totalPages: number
+    totalDocs: number
+    hasNextPage: boolean
+  }
+}
+
 export type PropertiesResponse = {
   properties: Property[]
 }
@@ -31,7 +42,17 @@ export type NewPropertiesResponse = {
   hasMore: boolean
 }
 
+export type PropertiesByPostTypeResponse = NewPropertiesResponse
+
 export type PropertiesByIdsResponse = Property[]
+
+export type PropertyFilterOptionsResponse = {
+  success: boolean
+  propertyTypes: string[]
+  regions: Array<{ code: string; label: string }>
+  priceRange: { min: number | null; max: number | null }
+  areaRange: { min: number | null; max: number | null }
+}
 
 // Exporting list of properties, limit to 100 properties.
 export async function fetchProperties(config?: AxiosRequestConfig): Promise<PropertiesResponse> {
@@ -73,6 +94,30 @@ export async function fetchNewProperties(
   }
 }
 
+export async function fetchPropertiesByPostType(
+  params?: {
+    limit?: number
+    page?: number
+  },
+  config?: AxiosRequestConfig,
+): Promise<PropertiesByPostTypeResponse> {
+  const query = buildQuery({
+    sort: '-postType,-createdAt',
+    limit: typeof params?.limit === 'number' ? params.limit : 10,
+    page: typeof params?.page === 'number' ? params.page : 1,
+  })
+
+  const response = await getJSON<SearchPropertiesResponse>(`/api/search/properties${query}`, config)
+
+  return {
+    data: response.data,
+    page: response.pagination.page,
+    totalPages: response.pagination.totalPages,
+    totalDocs: response.pagination.totalDocs,
+    hasMore: response.pagination.hasNextPage,
+  }
+}
+
 export async function fetchPropertiesByIds(
   ids: Array<number | string>,
   config?: AxiosRequestConfig,
@@ -92,6 +137,12 @@ export async function fetchPropertiesByIds(
   const response = await getJSON<PayloadFindResponse<Property>>(`/api/properties${query}`, config)
 
   return response.docs
+}
+
+export async function fetchPropertyFilterOptions(
+  config?: AxiosRequestConfig,
+): Promise<PropertyFilterOptionsResponse> {
+  return getJSON<PropertyFilterOptionsResponse>('/api/search/properties/filters', config)
 }
 
 export type PropertiesCountByLocationResponse = number
