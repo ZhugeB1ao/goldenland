@@ -1,4 +1,5 @@
 import type { Endpoint } from 'payload'
+import type { User } from '@/payload-types'
 
 const parseIntInRange = (value: string | undefined, min: number, max: number): number | undefined => {
   if (!value) return undefined
@@ -148,20 +149,71 @@ export const searchProperties: Endpoint = {
     }
 
     try {
+      const sortParts = String(sort)
+        .split(',')
+        .map((part) => part.trim())
+        .filter((part) => part.length > 0 && part !== 'postType' && part !== '-postType')
+      const resolvedSort = ['-postType', ...sortParts]
+
       const result = await payload.find({
         collection: 'properties',
         where,
         page: pageNumber,
         limit: limitNumber,
-        sort: String(sort),
+        sort: resolvedSort,
         depth: 2,
         overrideAccess: false,
         req,
       })
 
+      const userIds = result.docs
+        .map((doc) => (typeof doc.user === 'object' && doc.user ? doc.user.id : doc.user))
+        .filter((id) => id !== null && id !== undefined)
+        .map((id) => String(id))
+
+      const uniqueUserIds = Array.from(new Set(userIds))
+      const userMap = new Map<string, User>()
+
+      if (uniqueUserIds.length > 0) {
+        const users = await payload.find({
+          collection: 'users',
+          where: {
+            id: {
+              in: uniqueUserIds,
+            },
+          },
+          limit: uniqueUserIds.length,
+          depth: 0,
+          overrideAccess: true,
+          select: {
+            id: true,
+            fullName: true,
+            phone: true,
+            avatar_id: true,
+          },
+        })
+
+        for (const user of users.docs as User[]) {
+          userMap.set(String(user.id), user)
+        }
+      }
+
+      const data = result.docs.map((doc) => {
+        const userId = typeof doc.user === 'object' && doc.user ? doc.user.id : doc.user
+        if (!userId) return doc
+
+        const safeUser = userMap.get(String(userId))
+        if (!safeUser) return doc
+
+        return {
+          ...doc,
+          user: safeUser,
+        }
+      })
+
       return Response.json({
         success: true,
-        data: result.docs,
+        data,
         pagination: {
           page: result.page,
           totalPages: result.totalPages,

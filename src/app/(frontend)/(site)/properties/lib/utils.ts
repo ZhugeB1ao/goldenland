@@ -75,4 +75,10 @@ export function formatLocation(property: Property): string {
   return mappedLocation || property.address || 'Đang cập nhật'
 }
 
+export function formatProvince(property: Property): string {
+  const provinceKey = normalizeCode(property.provinceCode)
+  const provinceName = provinceKey ? provinceNameByCode.get(provinceKey) : undefined
+  return provinceName || 'Đang cập nhật'
+}
+
 export const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1400&q=80'
