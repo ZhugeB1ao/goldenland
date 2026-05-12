@@ -94,12 +94,18 @@ export const purchasePackage: Endpoint = {
                 req,
             })
 
-            // 5. Trừ số dư
+            // 5. Trừ số dư và cập nhật quyền lợi Membership
+            const newExpiresAt = new Date()
+            newExpiresAt.setDate(newExpiresAt.getDate() + (pkg.durationDays as number))
+
             await payload.update({
                 collection: 'users',
                 id: user.id,
                 data: {
                     balance: currentBalance - totalAmount,
+                    activePackage: packageId,
+                    availableListings: (user.availableListings || 0) + (pkg.totalProperties as number),
+                    packageExpiresAt: newExpiresAt.toISOString(),
                 },
                 overrideAccess: false,
                 req,

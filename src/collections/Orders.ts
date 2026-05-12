@@ -165,5 +165,36 @@ export const Orders: CollectionConfig = {
                 return data
             },
         ],
+        afterChange: [
+            async ({ doc, previousDoc, operation, req }) => {
+                // Xử lý khi đơn hàng Nạp tiền (top_up) được chuyển sang trạng thái 'paid'
+                if (
+                    operation === 'update' && 
+                    doc.orderType === 'top_up' && 
+                    doc.status === 'paid' && 
+                    previousDoc.status !== 'paid'
+                ) {
+                    const userId = typeof doc.user === 'string' ? doc.user : doc.user.id
+                    
+                    const user = await req.payload.findByID({
+                        collection: 'users',
+                        id: userId,
+                        req,
+                    })
+
+                    if (user) {
+                        await req.payload.update({
+                            collection: 'users',
+                            id: userId,
+                            data: {
+                                balance: (user.balance || 0) + (doc.totalAmount || 0),
+                            },
+                            req,
+                        })
+                    }
+                }
+                return doc
+            }
+        ],
     },
 }

@@ -9,7 +9,7 @@ export const Users: CollectionConfig = {
   },
   auth: true,
   access: {
-    admin: checkAdmin,
+    admin: ({ req: { user } }) => user?.role === 'admin',
     create: () => true,
     read: ({ req: { user } }) => {
       if (!user) return false
@@ -83,6 +83,32 @@ export const Users: CollectionConfig = {
       },
       admin: {
         description: 'Số dư tài khoản (VNĐ)',
+      },
+    },
+
+    // --- Quyền lợi gói Membership ---
+    {
+      name: 'activePackage',
+      type: 'relationship',
+      relationTo: 'packages',
+      admin: {
+        description: 'Gói Membership đang sử dụng',
+      },
+    },
+    {
+      name: 'packageExpiresAt',
+      type: 'date',
+      admin: {
+        description: 'Ngày hết hạn gói Membership',
+      },
+    },
+    {
+      name: 'availableListings',
+      type: 'number',
+      defaultValue: 0,
+      min: 0,
+      admin: {
+        description: 'Số lượt đăng tin còn lại',
       },
     },
 

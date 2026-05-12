@@ -3,6 +3,7 @@ const navLinks = [
   { href: '/account/profile', label: 'Thông tin cá nhân' },
   { href: '/account/management', label: 'Quản lý' },
   { href: '/account/setting', label: 'Cài đặt tài khoản' },
+  { href: '/account/membership', label: 'Gói Hội Viên' },
 ]
 
 export default function SideBar() {

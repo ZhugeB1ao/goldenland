@@ -30,6 +30,7 @@ import { Settings } from './app/globals/Settings'
 
 import { divisionEndpoints } from './endpoints/divisions'
 import { purchasePackage } from './endpoints/purchasePackage'
+import { topUp } from './endpoints/topUp'
 import { searchProperties } from './endpoints/searchProperties'
 import { propertyFilters } from './endpoints/propertyFilters'
 import { searchProjects } from './endpoints/searchProjects'
@@ -65,6 +66,7 @@ export default buildConfig({
   endpoints: [
     ...divisionEndpoints,
     purchasePackage,
+    topUp,
     searchProperties,
     propertyFilters,
     searchProjects,

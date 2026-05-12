@@ -172,6 +172,18 @@ export interface User {
    * Số dư tài khoản (VNĐ)
    */
   balance?: number | null;
+  /**
+   * Gói Membership đang sử dụng
+   */
+  activePackage?: (number | null) | Package;
+  /**
+   * Ngày hết hạn gói Membership
+   */
+  packageExpiresAt?: string | null;
+  /**
+   * Số lượt đăng tin còn lại
+   */
+  availableListings?: number | null;
   isVerified?: boolean | null;
   isActive?: boolean | null;
   verificationToken?: string | null;
@@ -199,6 +211,77 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "packages".
+ */
+export interface Package {
+  id: number;
+  /**
+   * VD: Gói Cơ bản, Gói VIP, Gói Premium
+   */
+  name: string;
+  description?: string | null;
+  subtitle?: string | null;
+  isBestSeller?: boolean | null;
+  /**
+   * Giá gói (VNĐ)
+   */
+  price: number;
+  /**
+   * Giá gốc (hiển thị gạch ngang)
+   */
+  originalPrice?: number | null;
+  /**
+   * Số lượt đăng tin
+   */
+  totalProperties: number;
+  /**
+   * Thời hạn gói (ngày)
+   */
+  durationDays: number;
+  /**
+   * Mỗi tin đăng hiển thị bao nhiêu ngày
+   */
+  propertyDurationDays: number;
+  /**
+   * Danh sách voucher tặng kèm khi mua gói
+   */
+  bonusVouchers?:
+    | {
+        /**
+         * Số lượng
+         */
+        quantity?: number | null;
+        /**
+         * Giá trị giảm giá (VNĐ)
+         */
+        discountValue?: number | null;
+        /**
+         * Loại tin được áp dụng voucher
+         */
+        appliedFor?: ('normal' | 'vip' | 'special') | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Danh sách tính năng gói
+   */
+  features?:
+    | {
+        feature: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Loại tin được đăng từ gói này
+   */
+  postType?: ('normal' | 'vip') | null;
+  sort?: number | null;
+  isActive?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -628,77 +711,6 @@ export interface Report {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "packages".
- */
-export interface Package {
-  id: number;
-  /**
-   * VD: Gói Cơ bản, Gói VIP, Gói Premium
-   */
-  name: string;
-  description?: string | null;
-  subtitle?: string | null;
-  isBestSeller?: boolean | null;
-  /**
-   * Giá gói (VNĐ)
-   */
-  price: number;
-  /**
-   * Giá gốc (hiển thị gạch ngang)
-   */
-  originalPrice?: number | null;
-  /**
-   * Số lượt đăng tin
-   */
-  totalProperties: number;
-  /**
-   * Thời hạn gói (ngày)
-   */
-  durationDays: number;
-  /**
-   * Mỗi tin đăng hiển thị bao nhiêu ngày
-   */
-  propertyDurationDays: number;
-  /**
-   * Danh sách voucher tặng kèm khi mua gói
-   */
-  bonusVouchers?:
-    | {
-        /**
-         * Số lượng
-         */
-        quantity?: number | null;
-        /**
-         * Giá trị giảm giá (VNĐ)
-         */
-        discountValue?: number | null;
-        /**
-         * Loại tin được áp dụng voucher
-         */
-        appliedFor?: ('normal' | 'vip' | 'special') | null;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Danh sách tính năng gói
-   */
-  features?:
-    | {
-        feature: string;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Loại tin được đăng từ gói này
-   */
-  postType?: ('normal' | 'vip') | null;
-  sort?: number | null;
-  isActive?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "posting-prices".
  */
 export interface PostingPrice {
@@ -1017,6 +1029,9 @@ export interface UsersSelect<T extends boolean = true> {
   avatar_id?: T;
   role?: T;
   balance?: T;
+  activePackage?: T;
+  packageExpiresAt?: T;
+  availableListings?: T;
   isVerified?: T;
   isActive?: T;
   verificationToken?: T;

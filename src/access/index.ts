@@ -7,7 +7,7 @@ type UserLike = {
 
 const isAdmin = (user: UserLike): boolean => user?.role === 'admin'
 
-export const checkAdmin: Access = ({ req: { user } }) => {
+export const checkAdmin = ({ req: { user } }: any): boolean => {
   console.log('--- DEBUG checkAdmin ---')
   console.log('User:', user?.email)
   console.log('Role:', user?.role)
