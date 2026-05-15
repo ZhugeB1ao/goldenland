@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import * as authService from '@/app/services/auth'
-import { clearSearchHistory } from '@/app/lib/hybridSearch'
+import { clearSearchHistory } from '@/app/(frontend)/(site)/home/lib/search/history'
 
 export type UserState = {
   id?: string | number

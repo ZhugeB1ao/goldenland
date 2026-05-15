@@ -3,7 +3,6 @@ import type { Article } from '@/payload-types'
 import { buildQuery } from '@/app/lib/query'
 import { getJSON, getServerBaseURL } from '@/app/lib/http'
 
-// Payload find response shape
 type PayloadFindResponse<T> = {
   docs: T[]
 }
@@ -23,29 +22,26 @@ const resolveMediaURL = (thumbnailUrl?: string | null): string | undefined => {
   return `${getServerBaseURL()}${thumbnailUrl}`
 }
 
-// Fetch featured articles by category id
 export async function fetchFeaturedArticlesBasedOnCategoryId(
   category: string | number,
   config?: AxiosRequestConfig,
 ): Promise<FeaturedArticleSummary[]> {
-  // Normalize numeric category values from UI params.
   const categoryValue = /^\d+$/.test(String(category)) ? Number(category) : category
 
-  // Request only fields used by the featured section.
   const query = buildQuery({
-      select: {
-          title: true,
-          excerpt: true,
-          updatedAt: true,
-          thumbnailUrl: true,
+    select: {
+      title: true,
+      excerpt: true,
+      updatedAt: true,
+      thumbnailUrl: true,
+    },
+    where: {
+      category: {
+        equals: categoryValue,
       },
-      where: {
-          category: {
-          equals: categoryValue,
-          },
-      },
-      limit: 6,
-      sort: '-createdAt',
+    },
+    limit: 6,
+    sort: '-createdAt',
   })
 
   const response = await getJSON<PayloadFindResponse<RawFeaturedArticle>>(
@@ -53,7 +49,6 @@ export async function fetchFeaturedArticlesBasedOnCategoryId(
     config,
   )
 
-  // Keep only fields used by the homepage section.
   return response.docs.map(({ id, title, excerpt, updatedAt, thumbnailUrl }) => ({
     id,
     title,
@@ -63,7 +58,6 @@ export async function fetchFeaturedArticlesBasedOnCategoryId(
   }))
 }
 
-// Fetch 6 published real-estate news articles (category = 6) sorted by highest view count.
 export async function fetchTopViewedRealEstateNews(
   config?: AxiosRequestConfig,
 ): Promise<FeaturedArticleSummary[]> {
@@ -105,7 +99,3 @@ export async function fetchTopViewedRealEstateNews(
     imageUrl: resolveMediaURL(thumbnailUrl),
   }))
 }
-
-
-
-

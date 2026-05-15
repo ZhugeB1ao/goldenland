@@ -1,26 +1,25 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { applySearchTagSuggestion, removeSearchTokenByChip } from '../lib/search/chips'
+import { getSearchPlaceholder, parseSearch } from '../lib/search/parser'
+import { readSearchHistory, recordSearchHistory } from '../lib/search/history'
 import {
-  applySearchTagSuggestion,
-  getSearchPlaceholder,
   getSearchSuggestionFragment,
   getSearchSuggestionFragmentRaw,
   getSearchTagSuggestions,
-  parseSearch,
-  readSearchHistory,
-  recordSearchHistory,
-  removeSearchTokenByChip,
-  type SearchHistoryItem,
+} from '../lib/search/suggestions'
+import {
   type SearchChip,
+  type SearchHistoryItem,
   type SearchTagSuggestion,
   type SearchTab,
-} from '@/app/lib/hybridSearch'
+} from '../lib/search/types'
 import {
   runHybridSearch,
   searchProjectsByParsed,
   type HybridSearchResult,
-} from '@/app/services/hybridSearch'
+} from '../services/hybridSearch'
 
 type TabOption = {
   key: SearchTab
@@ -63,6 +62,23 @@ export function HeroSection() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const parsed = useMemo(() => parseSearch(inputValue, activeTab), [inputValue, activeTab])
+  //   {
+  //   tab: "property",
+  //   keyword: "",
+  //   filters: {
+  //     district: 7,
+  //     propertyType: "apartment",
+  //     bedrooms: 2,
+  //     maxPrice: 3000000000
+  //   },
+  //   chips: [
+  //     { key: "district", label: "Quận 7", value: "7", editText: "quận 7" },
+  //     { key: "propertyType", label: "chung cư", value: "apartment", editText: "chung cư" },
+  //     { key: "bedrooms", label: "2 phòng ngủ", value: "2", editText: "2 phòng ngủ" },
+  //     { key: "price", label: "Dưới 3 tỷ", value: "Dưới 3 tỷ", editText: "dưới 3 tỷ" }
+  //   ]
+  // }
+
   const suggestionFragment = useMemo(() => getSearchSuggestionFragment(inputValue), [inputValue])
   const rawSuggestionFragment = useMemo(
     () => getSearchSuggestionFragmentRaw(inputValue),
@@ -119,6 +135,20 @@ export function HeroSection() {
 
     try {
       const result = await runHybridSearch(parsedSearch)
+      // {
+      //   tab: "property",
+      //   parsed: { ...parsedSearch },
+      //   property: {
+      //     total: 128,
+      //     items: [
+      //       { id: 101, title: "Căn hộ Sunrise City Q7", address: "Nguyễn Hữu Thọ, Quận 7", ... },
+      //       { id: 205, title: "Chung cư 2PN Phú Mỹ Hưng", address: "Phú Mỹ Hưng, Quận 7", ... }
+      //     ]
+      //   },
+      //   project: { total: 0, items: [] },
+      //   news: { total: 0, items: [] }
+      // }
+
       setSearchResult(result)
       setSearchHistory(recordSearchHistory(rawInput, parsedSearch))
     } catch (error: unknown) {
@@ -280,9 +310,9 @@ export function HeroSection() {
                     </div>
 
                     {searchResult && (
-                      <div className="space-y-3">
+                      <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
                         {(activeTab === 'property' || activeTab === 'all') &&
-                          searchResult.property.items.slice(0, 3).map((property) => (
+                          searchResult.property.items.slice(0, 5).map((property) => (
                             <div
                               key={`property-${property.id}`}
                               className="rounded-md bg-surface p-3"
@@ -295,7 +325,7 @@ export function HeroSection() {
                           ))}
 
                         {(activeTab === 'project' || activeTab === 'all') &&
-                          searchResult.project.items.slice(0, 3).map((project) => (
+                          searchResult.project.items.slice(0, 5).map((project) => (
                             <div
                               key={`project-${project.id}`}
                               className="rounded-md bg-surface p-3"
@@ -308,7 +338,7 @@ export function HeroSection() {
                           ))}
 
                         {(activeTab === 'news' || activeTab === 'all') &&
-                          searchResult.news.items.slice(0, 3).map((article) => (
+                          searchResult.news.items.slice(0, 5).map((article) => (
                             <div key={`news-${article.id}`} className="rounded-md bg-surface p-3">
                               <p className="text-sm font-semibold text-on-surface">
                                 {article.title}
