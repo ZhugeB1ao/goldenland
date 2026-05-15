@@ -1,6 +1,6 @@
 import type { Article, Project, Property } from '@/payload-types'
 import { buildQuery } from '@/app/lib/query'
-import type { ParsedSearchResult, SearchTab } from '@/app/lib/hybridSearch'
+import type { ParsedSearchResult, SearchTab } from '../lib/search/types'
 import { getJSON } from '@/app/lib/http'
 
 type SearchPagination = {
@@ -37,13 +37,15 @@ type SearchOptions = {
   limit?: number
 }
 
-const DEFAULT_LIMIT = 6
+const DEFAULT_LIMIT = 5
 
+// Create an empty result group for tabs that are not searched.
 const emptyGroup = <T>(): HybridSearchGroup<T> => ({
   items: [],
   total: 0,
 })
 
+// Search properties using the parsed home-search filters.
 export async function searchPropertiesByParsed(
   parsed: ParsedSearchResult,
   options?: SearchOptions,
@@ -53,6 +55,7 @@ export async function searchPropertiesByParsed(
     district: parsed.filters.district || undefined,
     listingType: parsed.filters.listingType || undefined,
     propertyType: parsed.filters.propertyType || undefined,
+    provinceCode: parsed.filters.provinceCode || undefined,
     bedrooms: parsed.filters.bedrooms || undefined,
     bathrooms: parsed.filters.bathrooms || undefined,
     minPrice: parsed.filters.minPrice || undefined,
@@ -76,6 +79,7 @@ export async function searchPropertiesByParsed(
   }
 }
 
+// Search projects using keyword and location from parsed input.
 export async function searchProjectsByParsed(
   parsed: ParsedSearchResult,
   options?: SearchOptions,
@@ -83,6 +87,7 @@ export async function searchProjectsByParsed(
   const query = buildQuery({
     keyword: parsed.keyword || undefined,
     district: parsed.filters.district || undefined,
+    provinceCode: parsed.filters.provinceCode || undefined,
     page: options?.page ?? 1,
     limit: options?.limit ?? DEFAULT_LIMIT,
     sort: '-createdAt',
@@ -96,12 +101,15 @@ export async function searchProjectsByParsed(
   }
 }
 
+// Search news articles using the parsed keyword.
 export async function searchNewsByParsed(
   parsed: ParsedSearchResult,
   options?: SearchOptions,
 ): Promise<HybridSearchGroup<Article>> {
   const query = buildQuery({
     keyword: parsed.keyword || undefined,
+    district: parsed.filters.district || undefined,
+    provinceCode: parsed.filters.provinceCode || undefined,
     page: options?.page ?? 1,
     limit: options?.limit ?? DEFAULT_LIMIT,
     sort: '-publishedAt',
@@ -115,6 +123,7 @@ export async function searchNewsByParsed(
   }
 }
 
+// Run the correct search group for the active tab.
 export async function runHybridSearch(
   parsed: ParsedSearchResult,
   options?: SearchOptions,

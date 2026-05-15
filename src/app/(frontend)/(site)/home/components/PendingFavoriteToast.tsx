@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import type { Property } from '@/payload-types'
-import { fetchPropertyDetail } from '@/app/services/properties'
+import { fetchPropertyDetail } from '../services/properties'
 import divisions from '@/app/data/vietnam-divisions.json'
 import type { AppDispatch, RootState } from '@/app/store'
 import { selectIsLoggedIn } from '@/app/store/slices/authSlice'

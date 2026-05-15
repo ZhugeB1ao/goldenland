@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { fetchPropertiesCountByLocation } from '@/app/services/properties'
-import { fetchNewestProjects } from '@/app/services/projects'
+import { fetchPropertiesCountByLocation } from '../services/properties'
+import { fetchNewestProjects } from '../services/projects'
 
 type LocationCard = {
   city: string

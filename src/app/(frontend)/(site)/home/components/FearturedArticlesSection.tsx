@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import {
   fetchFeaturedArticlesBasedOnCategoryId,
   fetchTopViewedRealEstateNews,
-} from '@/app/services/articles'
+} from '../services/articles'
 
 type Article = {
   id: string | number
