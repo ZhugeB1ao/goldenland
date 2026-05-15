@@ -1,7 +1,11 @@
 import type { Endpoint } from 'payload'
 import type { User } from '@/payload-types'
 
-const parseIntInRange = (value: string | undefined, min: number, max: number): number | undefined => {
+const parseIntInRange = (
+  value: string | undefined,
+  min: number,
+  max: number,
+): number | undefined => {
   if (!value) return undefined
   const parsed = Number.parseInt(value, 10)
   if (!Number.isFinite(parsed)) return undefined
@@ -38,6 +42,19 @@ type SearchPropertiesQuery = {
   limit?: string
   sort?: string
 }
+
+const propertyDistrictFallback = (districtNumber: number) => ({
+  or: [
+    { address: { like: `quận ${districtNumber}` } },
+    { address: { like: `quan ${districtNumber}` } },
+    { address: { like: `q.${districtNumber}` } },
+    { address: { like: `q ${districtNumber}` } },
+    { title: { like: `quận ${districtNumber}` } },
+    { title: { like: `quan ${districtNumber}` } },
+    { description: { like: `quận ${districtNumber}` } },
+    { description: { like: `quan ${districtNumber}` } },
+  ],
+})
 
 export const searchProperties: Endpoint = {
   path: '/search/properties',
@@ -103,8 +120,24 @@ export const searchProperties: Endpoint = {
       where.and.push({
         or: [
           { title: { like: keyword } },
+          { slug: { like: keyword } },
           { description: { like: keyword } },
           { address: { like: keyword } },
+          { street: { like: keyword } },
+          { videoUrl: { like: keyword } },
+          { seoTitle: { like: keyword } },
+          { seoDescription: { like: keyword } },
+          { seoKeywords: { like: keyword } },
+          { listingType: { like: keyword } },
+          { propertyType: { like: keyword } },
+          { direction: { like: keyword } },
+          { legalStatus: { like: keyword } },
+          { furnitureStatus: { like: keyword } },
+          { postType: { like: keyword } },
+          { label: { like: keyword } },
+          { priceUnit: { like: keyword } },
+          { provinceCode: { like: keyword } },
+          { wardCode: { like: keyword } },
         ],
       })
     }
@@ -114,15 +147,8 @@ export const searchProperties: Endpoint = {
     if (provinceCode) where.and.push({ provinceCode: { equals: provinceCode } })
     if (wardCode) where.and.push({ wardCode: { equals: wardCode } })
     if (districtNumber) {
-      where.and.push({
-        or: [
-          { address: { like: `quận ${districtNumber}` } },
-          { address: { like: `quan ${districtNumber}` } },
-          { address: { like: `q.${districtNumber}` } },
-          { address: { like: `q ${districtNumber}` } },
-          { address: { like: ` q${districtNumber}` } },
-        ],
-      })
+      // Collection currently has no dedicated district field, so we fallback to searchable text fields.
+      where.and.push(propertyDistrictFallback(districtNumber))
     }
     if (direction) where.and.push({ direction: { equals: direction } })
     if (legalStatus) where.and.push({ legalStatus: { equals: legalStatus } })
@@ -223,6 +249,44 @@ export const searchProperties: Endpoint = {
           hasPrevPage: result.hasPrevPage,
         },
       })
+
+      //{
+      //   "success": true,
+      //   "data": [
+      //     {
+      //       "id": 101,
+      //       "title": "Căn hộ 2PN Quận 7 giá tốt",
+      //       "listingType": "sale",
+      //       "propertyType": "apartment",
+      //       "price": 2800000000,
+      //       "bedrooms": 2,
+      //       "bathrooms": 2,
+      //       "provinceCode": "79",
+      //       "address": "Nguyễn Hữu Thọ, Quận 7, TP.HCM",
+      //       "status": "active"
+      //     },
+      //     {
+      //       "id": 205,
+      //       "title": "Chung cư Phú Mỹ Hưng 2PN",
+      //       "listingType": "sale",
+      //       "propertyType": "apartment",
+      //       "price": 2950000000,
+      //       "bedrooms": 2,
+      //       "bathrooms": 2,
+      //       "provinceCode": "79",
+      //       "address": "Phú Mỹ Hưng, Quận 7, TP.HCM",
+      //       "status": "active"
+      //     }
+      //   ],
+      //   "pagination": {
+      //     "page": 1,
+      //     "totalPages": 13,
+      //     "totalDocs": 128,
+      //     "limit": 10,
+      //     "hasNextPage": true,
+      //     "hasPrevPage": false
+      //   }
+      // }
     } catch (error: any) {
       return Response.json({ error: error.message }, { status: 500 })
     }

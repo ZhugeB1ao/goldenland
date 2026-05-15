@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import type { Property } from '@/payload-types'
-import { fetchPropertiesByPostType, fetchPropertyFilterOptions } from '@/app/services/properties'
+import { fetchPropertiesByPostType, fetchPropertyFilterOptions } from './services/properties'
 import { PropertiesFilterBar } from './components/PropertiesFilterBar'
 import { PropertiesHeader } from './components/PropertiesHeader'
 import { PropertiesList } from './components/PropertiesList'

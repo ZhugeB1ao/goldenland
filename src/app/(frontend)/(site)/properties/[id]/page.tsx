@@ -21,15 +21,51 @@ function formatArea(property: Property): string {
 export default async function PropertyDetailPage({ params }: PageProps) {
   const { id } = await params
   let property: Property | undefined
+  let sidebarUser:
+    | {
+        fullName?: string | null
+        phone?: string | null
+        avatar_id?: string | null
+        email?: string | null
+      }
+    | undefined
 
   try {
     const payload = await getPayload({ config })
     property = await payload.findByID({
       collection: 'properties',
       id,
-      depth: 1,
+      depth: 2,
       overrideAccess: false,
     })
+
+    const userId =
+      typeof property.user === 'object' && property.user
+        ? property.user.id
+        : property.user
+
+    if (userId) {
+      const user = await payload.findByID({
+        collection: 'users',
+        id: String(userId),
+        depth: 0,
+        // Intentional: property detail sidebar needs public contact info.
+        overrideAccess: true,
+        select: {
+          fullName: true,
+          phone: true,
+          avatar_id: true,
+          email: true,
+        },
+      })
+
+      sidebarUser = {
+        fullName: user.fullName,
+        phone: user.phone,
+        avatar_id: user.avatar_id,
+        email: user.email,
+      }
+    }
   } catch {
     notFound()
   }
@@ -265,18 +301,23 @@ export default async function PropertyDetailPage({ params }: PageProps) {
         <div className="lg:col-span-1">
           <div className="sticky top-32 space-y-6">
             <div className="bg-surface-container-lowest rounded-xl p-6 shadow-[0px_12px_32px_rgba(27,28,28,0.06)] border border-outline-variant/15 relative z-10 overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -z-10"></div>
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-surface bg-surface-container-highest">
-                  <div className="w-full h-full bg-surface-container flex items-center justify-center text-secondary font-bold">
-                    {typeof property.user === 'object'
-                      ? property.user.email?.charAt(0).toUpperCase()
-                      : 'U'}
-                  </div>
+                  {sidebarUser?.avatar_id ? (
+                    <img
+                      alt={sidebarUser.fullName || 'Người đăng'}
+                      className="h-full w-full object-cover"
+                      src={sidebarUser.avatar_id}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-surface-container flex items-center justify-center text-secondary font-bold">
+                      {(sidebarUser?.fullName || sidebarUser?.email || 'U').charAt(0).toUpperCase()}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <h3 className="font-headline font-semibold text-lg text-on-surface tracking-tight">
-                    {typeof property.user === 'object' ? property.user.email : 'Người đăng'}
+                    {sidebarUser?.fullName || sidebarUser?.email || 'Người đăng'}
                   </h3>
                   <p className="text-sm text-on-secondary-container font-label">
                     Chuyên viên tư vấn
@@ -293,7 +334,7 @@ export default async function PropertyDetailPage({ params }: PageProps) {
                 >
                   call
                 </span>
-                0987 654 321 - Hiện số
+                {sidebarUser?.phone ? `${sidebarUser.phone} - Hiện số` : 'Hiện số liên hệ'}
               </button>
               <button
                 className="w-full bg-transparent border border-primary text-primary py-3 px-4 rounded-md font-lexend font-medium tracking-tight hover:bg-primary/5 transition-colors flex items-center justify-center gap-2"

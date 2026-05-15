@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import type { Property } from '@/payload-types'
 import divisions from '@/app/data/vietnam-divisions.json'
-import { fetchPropertiesByIds } from '@/app/services/properties'
+import { fetchPropertiesByIds } from '../services/properties'
 import type { AppDispatch, RootState } from '@/app/store'
 import { selectFavoriteIds, toggleFavoriteThunk } from '@/app/store/slices/favoritesSlice'
 

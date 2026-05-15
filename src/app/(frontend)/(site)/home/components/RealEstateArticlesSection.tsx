@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import useEmblaCarousel from 'embla-carousel-react'
-import { fetchFeaturedArticlesBasedOnCategoryId } from '@/app/services/articles'
+import { fetchFeaturedArticlesBasedOnCategoryId } from '../services/articles'
 
 type NewsItem = {
   id: string | number

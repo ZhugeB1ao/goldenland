@@ -1,4 +1,4 @@
-import { fetchFeaturedProjects } from '@/app/services/projects'
+import { fetchFeaturedProjects } from '../services/projects'
 export async function FeaturedProjectsSection() {
 
   const response = await fetchFeaturedProjects()

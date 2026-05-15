@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseSearch, removeSearchTokenByChip } from '@/app/lib/hybridSearch'
+import { parseSearch, removeSearchTokenByChip } from '@/app/(frontend)/(site)/home/lib/search'
 
 describe('hybridSearch parsing', () => {
   it('parses district with "quận" prefix', () => {

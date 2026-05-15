@@ -19,9 +19,6 @@ export type ProjectsResponse = {
   hasMore: boolean
 }
 
-/**
- * Fetches the top 4 real estate projects based on the highest view count.
- */
 export async function fetchFeaturedProjects(
   config?: AxiosRequestConfig,
 ): Promise<ProjectsResponse> {
@@ -47,9 +44,6 @@ export async function fetchFeaturedProjects(
   }
 }
 
-/**
- * Fetches the 7 most recent projects based on the creation date.
- */
 export async function fetchNewestProjects(
   config?: AxiosRequestConfig,
 ): Promise<ProjectsResponse> {
