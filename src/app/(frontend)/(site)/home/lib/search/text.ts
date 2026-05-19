@@ -47,6 +47,7 @@ export const removeAliasTokens = (input: string, aliases: string[]): string => {
   const tokens = [...inputTokens]
   const normalized = [...normalizedTokens]
 
+
   aliasTokenSets.forEach((aliasTokens) => {
     if (aliasTokens.length === 0) return
 

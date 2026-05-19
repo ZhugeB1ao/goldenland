@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { fetchFeaturedProjects } from '../services/projects'
 import { ProjectGridItem } from './ProjectGridItem'
 
+
 export async function FeaturedProjectsSection() {
   const response = await fetchFeaturedProjects()
   const projects = response.data

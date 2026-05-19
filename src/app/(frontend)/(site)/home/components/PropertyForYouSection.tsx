@@ -1,6 +1,7 @@
 'use client'
 import type { Property } from '@/payload-types'
 import { fetchNewProperties } from '../services/properties'
+
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { PropertyGridItem, type PropertyItem } from '../../components/PropertyGridItem'

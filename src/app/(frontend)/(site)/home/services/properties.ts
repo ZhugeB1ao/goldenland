@@ -1,5 +1,6 @@
 import type { Property, User } from '@/payload-types'
 import type { Payload } from 'payload'
+
 import type { AxiosRequestConfig } from 'axios'
 import { buildQuery } from '@/app/lib/query'
 import { getJSON } from '@/app/lib/http'
@@ -65,6 +66,7 @@ export async function fetchPropertyDetail(id: string, config?: AxiosRequestConfi
     depth: 2, // Get associated user/project data
   })
   const response = await getJSON<Property | PropertyDetailResponse>(`/api/properties/${id}${query ? `?${query}` : ''}`, config)
+
 
   if (response && typeof response === 'object' && 'property' in response) {
     return response as PropertyDetailResponse
