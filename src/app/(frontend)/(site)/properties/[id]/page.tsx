@@ -1,5 +1,7 @@
 import type { Project, Property } from '@/payload-types'
-import { formatLocation, formatPrice } from '../lib/utils'
+import { FALLBACK_IMAGE, formatLocation, formatPrice } from '../lib/utils'
+import config from '@payload-config'
+import { getPayload } from 'payload'
 import { notFound } from 'next/navigation'
 import { Breadcrumb, HeaderActions, LocationLine, PropertyStats } from './components/DetailHeader'
 import { PropertyGallery } from './components/PropertyGallery'
@@ -12,13 +14,10 @@ import {
   type FeatureItem,
   type MetaItem,
 } from './components/DetailSections'
-import { ConsultationForm, ContactCard } from './components/DetailSidebar'
 import { ForYouSection } from './components/ForYouSection'
-import {
-  fetchForYouProperties,
-  fetchPropertyDetail,
-  type PropertyDetailResponse,
-} from '@/app/services/properties'
+import { FavoriteActionButton } from './components/FavoriteActionButton'
+import type { PropertyItem } from '../../components/PropertyGridItem'
+import { fetchForYouProperties } from '../services/properties'
 
 type PageProps = {
   params: Promise<{
@@ -28,6 +27,21 @@ type PageProps = {
 
 function formatArea(property: Property): string {
   return property.area ? `${property.area} m²` : 'Đang cập nhật'
+}
+
+function mapPropertyToItem(property: Property): PropertyItem {
+  const firstImage = property.images?.[0]?.image
+
+  return {
+    id: property.id,
+    title: property.title,
+    price: formatPrice(property),
+    area: formatArea(property),
+    location: formatLocation(property),
+    image: firstImage || FALLBACK_IMAGE,
+    imageAlt: property.title,
+    updatedAt: property.updatedAt,
+  }
 }
 
 function formatDate(value?: string | null): string {
@@ -179,17 +193,19 @@ export default async function PropertyDetailPage({ params }: PageProps) {
 
   try {
     const payload = await getPayload({ config })
-    property = await payload.findByID({
+    const foundProperty = await payload.findByID({
       collection: 'properties',
       id,
       depth: 2,
       overrideAccess: false,
     })
 
+    property = foundProperty
+
     const userId =
-      typeof property.user === 'object' && property.user
-        ? property.user.id
-        : property.user
+      typeof foundProperty.user === 'object' && foundProperty.user
+        ? foundProperty.user.id
+        : foundProperty.user
 
     if (userId) {
       const user = await payload.findByID({
@@ -247,6 +263,9 @@ export default async function PropertyDetailPage({ params }: PageProps) {
   const project = typeof property.project === 'object' ? property.project : null
   const projectItems = project ? buildProjectInfo(project) : []
   const projectTitle = project ? getProjectTitle(project) : ''
+  const forYouProperties = await fetchForYouProperties(property)
+    .then((properties) => properties.map(mapPropertyToItem))
+    .catch(() => [])
 
   const headerActions = (
     <>
@@ -268,15 +287,7 @@ export default async function PropertyDetailPage({ params }: PageProps) {
           flag
         </span>
       </button>
-      <button
-        aria-label="Favorite"
-        className="p-2 rounded-full hover:bg-surface-container-high transition-colors text-on-surface-variant flex items-center justify-center w-10 h-10"
-        type="button"
-      >
-        <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>
-          favorite
-        </span>
-      </button>
+      <FavoriteActionButton propertyId={property.id} title={property.title} />
     </>
   )
 

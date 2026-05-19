@@ -17,7 +17,7 @@ export function PropertiesSidebar({
   news,
 }: PropertiesSidebarProps) {
   return (
-    <aside className="lg:col-span-4 space-y-8">
+    <aside className="lg:col-span-4 self-start space-y-8">
       <div className="bg-white rounded-xl border border-outline-variant/30 p-6 shadow-sm">
         <h3 className="font-lexend font-bold text-lg mb-4">Gợi ý khoảng giá</h3>
         <div className="space-y-3">

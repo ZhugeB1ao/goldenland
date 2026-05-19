@@ -24,23 +24,44 @@ const parseNumberMin = (value: string | undefined, min: number): number | undefi
 type SearchPropertiesQuery = {
   keyword?: string
   listingType?: string
+  listingTypes?: string
   propertyType?: string
+  propertyTypes?: string
   provinceCode?: string
+  provinceCodes?: string
   wardCode?: string
+  wardCodes?: string
+  streets?: string
+  projectIds?: string
   district?: string
   minPrice?: string
   maxPrice?: string
   minArea?: string
   maxArea?: string
   bedrooms?: string
+  bedroomsList?: string
   bathrooms?: string
+  bathroomsList?: string
   direction?: string
+  directions?: string
   legalStatus?: string
+  legalStatuses?: string
   furnitureStatus?: string
+  furnitureStatuses?: string
   postType?: string
+  postTypes?: string
+  verifiedOnly?: string
   page?: string
   limit?: string
   sort?: string
+}
+
+const parseCsv = (value: string | undefined): string[] => {
+  if (!value) return []
+  return String(value)
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
 }
 
 const propertyDistrictFallback = (districtNumber: number) => ({
@@ -66,20 +87,33 @@ export const searchProperties: Endpoint = {
     const {
       keyword,
       listingType,
+      listingTypes,
       propertyType,
+      propertyTypes,
       provinceCode,
+      provinceCodes,
       wardCode,
+      wardCodes,
+      streets,
+      projectIds,
       district,
       minPrice,
       maxPrice,
       minArea,
       maxArea,
       bedrooms,
+      bedroomsList,
       bathrooms,
+      bathroomsList,
       direction,
+      directions,
       legalStatus,
+      legalStatuses,
       furnitureStatus,
+      furnitureStatuses,
       postType,
+      postTypes,
+      verifiedOnly,
       page = '1',
       limit = '20',
       sort = '-createdAt',
@@ -90,6 +124,23 @@ export const searchProperties: Endpoint = {
     const districtNumber = parseIntInRange(district, 1, 30)
     const bedroomsNumber = parseIntInRange(bedrooms, 1, 20)
     const bathroomsNumber = parseIntInRange(bathrooms, 1, 20)
+    const listingTypeList = parseCsv(listingTypes)
+    const propertyTypeList = parseCsv(propertyTypes)
+    const provinceCodeList = parseCsv(provinceCodes)
+    const directionList = parseCsv(directions)
+    const wardCodeList = parseCsv(wardCodes)
+    const streetList = parseCsv(streets)
+    const projectIdList = parseCsv(projectIds)
+    const legalStatusList = parseCsv(legalStatuses)
+    const furnitureStatusList = parseCsv(furnitureStatuses)
+    const postTypeList = parseCsv(postTypes)
+    const bedroomsListParsed = parseCsv(bedroomsList)
+      .map((value) => Number.parseInt(value, 10))
+      .filter((value) => Number.isFinite(value) && value >= 0 && value <= 99)
+    const bathroomsListParsed = parseCsv(bathroomsList)
+      .map((value) => Number.parseInt(value, 10))
+      .filter((value) => Number.isFinite(value) && value >= 0 && value <= 99)
+    const verifiedOnlyFlag = ['1', 'true', 'yes'].includes(String(verifiedOnly).toLowerCase())
     let minPriceNumber = parseNumberMin(minPrice, 0)
     let maxPriceNumber = parseNumberMin(maxPrice, 0)
     let minAreaNumber = parseNumberMin(minArea, 0)
@@ -142,18 +193,66 @@ export const searchProperties: Endpoint = {
       })
     }
 
-    if (listingType) where.and.push({ listingType: { equals: listingType } })
-    if (propertyType) where.and.push({ propertyType: { equals: propertyType } })
-    if (provinceCode) where.and.push({ provinceCode: { equals: provinceCode } })
-    if (wardCode) where.and.push({ wardCode: { equals: wardCode } })
+    if (listingTypeList.length > 0) {
+      where.and.push({ listingType: { in: listingTypeList } })
+    } else if (listingType) {
+      where.and.push({ listingType: { equals: listingType } })
+    }
+
+    if (propertyTypeList.length > 0) {
+      where.and.push({ propertyType: { in: propertyTypeList } })
+    } else if (propertyType) {
+      where.and.push({ propertyType: { equals: propertyType } })
+    }
+
+    if (provinceCodeList.length > 0) {
+      where.and.push({ provinceCode: { in: provinceCodeList } })
+    } else if (provinceCode) {
+      where.and.push({ provinceCode: { equals: provinceCode } })
+    }
+
+    if (wardCodeList.length > 0) {
+      where.and.push({ wardCode: { in: wardCodeList } })
+    } else if (wardCode) {
+      where.and.push({ wardCode: { equals: wardCode } })
+    }
+    if (streetList.length > 0) {
+      where.and.push({ street: { in: streetList } })
+    }
+    if (projectIdList.length > 0) {
+      where.and.push({ project: { in: projectIdList } })
+    }
     if (districtNumber) {
       // Collection currently has no dedicated district field, so we fallback to searchable text fields.
       where.and.push(propertyDistrictFallback(districtNumber))
     }
-    if (direction) where.and.push({ direction: { equals: direction } })
-    if (legalStatus) where.and.push({ legalStatus: { equals: legalStatus } })
-    if (furnitureStatus) where.and.push({ furnitureStatus: { equals: furnitureStatus } })
-    if (postType) where.and.push({ postType: { equals: postType } })
+    if (directionList.length > 0) {
+      where.and.push({ direction: { in: directionList } })
+    } else if (direction) {
+      where.and.push({ direction: { equals: direction } })
+    }
+
+    if (legalStatusList.length > 0) {
+      where.and.push({ legalStatus: { in: legalStatusList } })
+    } else if (legalStatus) {
+      where.and.push({ legalStatus: { equals: legalStatus } })
+    }
+
+    if (furnitureStatusList.length > 0) {
+      where.and.push({ furnitureStatus: { in: furnitureStatusList } })
+    } else if (furnitureStatus) {
+      where.and.push({ furnitureStatus: { equals: furnitureStatus } })
+    }
+
+    if (postTypeList.length > 0) {
+      where.and.push({ postType: { in: postTypeList } })
+    } else if (postType) {
+      where.and.push({ postType: { equals: postType } })
+    }
+
+    if (verifiedOnlyFlag) {
+      where.and.push({ isVerified: { equals: true } })
+    }
 
     if (typeof minPriceNumber === 'number') {
       where.and.push({ price: { greater_than_equal: minPriceNumber } })
@@ -167,10 +266,14 @@ export const searchProperties: Endpoint = {
     if (typeof maxAreaNumber === 'number') {
       where.and.push({ area: { less_than_equal: maxAreaNumber } })
     }
-    if (typeof bedroomsNumber === 'number') {
+    if (bedroomsListParsed.length > 0) {
+      where.and.push({ bedrooms: { in: bedroomsListParsed } })
+    } else if (typeof bedroomsNumber === 'number') {
       where.and.push({ bedrooms: { equals: bedroomsNumber } })
     }
-    if (typeof bathroomsNumber === 'number') {
+    if (bathroomsListParsed.length > 0) {
+      where.and.push({ bathrooms: { in: bathroomsListParsed } })
+    } else if (typeof bathroomsNumber === 'number') {
       where.and.push({ bathrooms: { equals: bathroomsNumber } })
     }
 

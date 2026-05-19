@@ -1,4 +1,5 @@
-import { fetchFeaturedProjects } from '@/app/services/projects'
+import Link from 'next/link'
+import { fetchFeaturedProjects } from '../services/projects'
 import { ProjectGridItem } from './ProjectGridItem'
 
 export async function FeaturedProjectsSection() {
@@ -11,12 +12,12 @@ export async function FeaturedProjectsSection() {
         <h2 className="text-3xl font-bold uppercase tracking-tighter text-on-surface">
           Dự án bất động sản nổi bật
         </h2>
-        <a className="group flex items-center gap-1 font-semibold text-primary" href="/projects">
+        <Link className="group flex items-center gap-1 font-semibold text-primary" href="/projects">
           Xem thêm
           <span className="material-symbols-outlined transition-transform group-hover:translate-x-1">
             arrow_forward
           </span>
-        </a>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">

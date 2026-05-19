@@ -1,6 +1,7 @@
 import React from 'react'
+import Link from 'next/link'
 import { getPayload } from 'payload'
-import configPromise from '../../../../payload.config'
+import configPromise from '@payload-config'
 import { notFound } from 'next/navigation'
 import { RichText } from '@payloadcms/richtext-lexical/react'
 import { ViewCounter } from './ViewCounter'
@@ -35,19 +36,12 @@ export default async function ArticleDetailPage(props: { params: Promise<{ slug:
 
   const article = docs[0]
 
-  const getImageUrl = (thumbnail: any) => {
-    if (thumbnail && typeof thumbnail === 'object' && thumbnail.url) {
-      return thumbnail.url
-    }
-    return ''
-  }
-
   return (
     <article className="article-detail-page">
       <div className="article-container">
         <header className="article-header">
           <div className="breadcrumb">
-            <a href="/articles">Tin tức</a> &gt; <span>{article.title}</span>
+            <Link href="/articles">Tin tức</Link> &gt; <span>{article.title}</span>
           </div>
           <h1>{article.title}</h1>
           <div className="meta-info">

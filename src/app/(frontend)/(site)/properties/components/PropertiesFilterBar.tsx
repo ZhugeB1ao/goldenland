@@ -1,96 +1,88 @@
-import { useEffect, useRef, useState } from 'react'
-import type { Dispatch, SetStateAction } from 'react'
+'use client'
 
-type FilterBarProps = {
-  propertyTypes: string[]
-  priceRanges: string[]
-  areaRanges: string[]
-  regions: string[]
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { PropertiesAdvancedFilterPopup, type FilterState } from './PropertiesAdvancedFilterPopup'
+
+type RangeOption = {
+  id: string
+  label: string
 }
 
+type SelectOption = {
+  value: string
+  label: string
+}
+
+type FilterBarProps = {
+  propertyTypeOptions: SelectOption[]
+  priceRangeOptions: RangeOption[]
+  areaRangeOptions: RangeOption[]
+  regionOptions: SelectOption[]
+  wardOptions: Array<SelectOption & { provinceCode: string }>
+  streetOptions: Array<SelectOption & { provinceCode: string; wardCode: string }>
+  projectOptions: Array<SelectOption & { provinceCode: string; wardCode: string }>
+  dynamicAttributeOptions: Array<{ key: string; label: string; options: SelectOption[] }>
+  filters: FilterState
+  keywordInput: string
+  onFiltersChange: (filters: FilterState) => void
+  onKeywordInputChange: (value: string) => void
+  onSearch: () => void
+}
+
+type PanelKey = null | 'advanced' | 'type' | 'price' | 'area' | 'region'
+
+const getFilterCount = (filters: FilterState) =>
+  [
+    filters.verifiedOnly ? 1 : 0,
+    filters.propertyTypes.length,
+    filters.priceRangeIds.length,
+    filters.areaRangeIds.length,
+    filters.minPriceInput ? 1 : 0,
+    filters.maxPriceInput ? 1 : 0,
+    filters.minAreaInput ? 1 : 0,
+    filters.maxAreaInput ? 1 : 0,
+    filters.provinceCodes.length,
+    filters.wardCodes.length,
+    filters.projectIds.length,
+    filters.directions.length,
+    filters.legalStatuses.length,
+    filters.bedroomsList.length,
+    filters.bathroomsList.length,
+  ].reduce((sum, value) => sum + value, 0)
+
 export function PropertiesFilterBar({
-  propertyTypes,
-  priceRanges,
-  areaRanges,
-  regions,
+  propertyTypeOptions,
+  priceRangeOptions,
+  areaRangeOptions,
+  regionOptions,
+  wardOptions,
+  streetOptions,
+  projectOptions,
+  dynamicAttributeOptions,
+  filters,
+  keywordInput,
+  onFiltersChange,
+  onKeywordInputChange,
+  onSearch,
 }: FilterBarProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const [openPanel, setOpenPanel] = useState<null | 'type' | 'price' | 'area' | 'region'>(null)
   const [isSticky, setIsSticky] = useState(false)
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([])
-  const [selectedPrices, setSelectedPrices] = useState<string[]>([])
-  const [selectedAreas, setSelectedAreas] = useState<string[]>([])
-  const [selectedRegions, setSelectedRegions] = useState<string[]>([])
+  const [openPanel, setOpenPanel] = useState<PanelKey>(null)
+  const [draftFilters, setDraftFilters] = useState<FilterState | null>(null)
 
-  const togglePanel = (panel: 'type' | 'price' | 'area' | 'region') => {
-    setOpenPanel((current) => (current === panel ? null : panel))
-  }
-
-  const toggleValue = (
-    value: string,
-    selected: string[],
-    setSelected: Dispatch<SetStateAction<string[]>>,
-  ) => {
-    setSelected((current) =>
-      current.includes(value) ? current.filter((item) => item !== value) : [...current, value],
-    )
-  }
-
-  const renderPanel = (
-    isOpen: boolean,
-    items: string[],
-    selected: string[],
-    onToggle: (value: string) => void,
-  ) => {
-    if (!isOpen) return null
-
-    return (
-      <div className="absolute left-0 top-full mt-2 w-64 rounded-xl border border-outline-variant/30 bg-white p-3 shadow-lg">
-        <div className="max-h-56 overflow-auto pr-1">
-          {items.length === 0 && <p className="text-xs text-secondary">Chưa có dữ liệu.</p>}
-          {items.map((item) => (
-            <label
-              key={item}
-              className="flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-sm text-on-surface hover:bg-surface-container"
-            >
-              <span className="min-w-0 flex-1 truncate">{item}</span>
-              <input
-                className="h-4 w-4"
-                type="checkbox"
-                checked={selected.includes(item)}
-                onChange={() => onToggle(item)}
-              />
-            </label>
-          ))}
-        </div>
-        <button
-          className="mt-3 w-full rounded-lg border border-outline-variant/40 py-2 text-xs font-semibold text-secondary hover:text-on-surface"
-          onClick={() => setOpenPanel(null)}
-          type="button"
-        >
-          Xong
-        </button>
-      </div>
-    )
-  }
-
-  const typeCount = selectedTypes.length
-  const priceCount = selectedPrices.length
-  const areaCount = selectedAreas.length
-  const regionCount = selectedRegions.length
+  const activeFilterCount = useMemo(() => getFilterCount(filters), [filters])
+  const legalOptions = useMemo(
+    () => dynamicAttributeOptions.find((group) => group.key === 'legalStatus')?.options ?? [],
+    [dynamicAttributeOptions],
+  )
 
   useEffect(() => {
     const stickyEnter = 220
     const stickyExit = 160
-
     const handleScroll = () => {
       if (!containerRef.current) return
-
-      setIsSticky((current) =>
-        current ? window.scrollY >= stickyExit : window.scrollY >= stickyEnter,
-      )
+      setIsSticky((current) => (current ? window.scrollY >= stickyExit : window.scrollY >= stickyEnter))
     }
-
     window.addEventListener('scroll', handleScroll, { passive: true })
     handleScroll()
     return () => window.removeEventListener('scroll', handleScroll)
@@ -98,156 +90,182 @@ export function PropertiesFilterBar({
 
   useEffect(() => {
     if (!openPanel) return
-
     const handleOutsideClick = (event: MouseEvent) => {
       if (!containerRef.current) return
       if (containerRef.current.contains(event.target as Node)) return
       setOpenPanel(null)
     }
-
     document.addEventListener('mousedown', handleOutsideClick)
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClick)
-    }
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
   }, [openPanel])
+
+  const togglePanel = (panel: Exclude<PanelKey, null>) => {
+    setOpenPanel((current) => (current === panel ? null : panel))
+  }
+
+  const toggleStringValue = (key: keyof FilterState, value: string) => {
+    const current = filters[key] as string[]
+    const next = current.includes(value) ? current.filter((item) => item !== value) : [...current, value]
+    onFiltersChange({ ...filters, [key]: next })
+  }
+
+  const renderSimplePanel = (
+    isOpen: boolean,
+    options: Array<SelectOption | RangeOption>,
+    selected: string[],
+    onToggle: (value: string) => void,
+  ) => {
+    if (!isOpen) return null
+    return (
+      <div className="absolute left-0 top-full z-50 mt-2 w-72 rounded-xl border border-outline-variant/30 bg-white p-3 shadow-lg">
+        <div className="max-h-56 overflow-y-auto pr-1">
+          {options.map((item) => {
+            const value = 'value' in item ? item.value : item.id
+            return (
+              <label key={value} className="flex items-center justify-between gap-2 rounded-lg px-2 py-2 text-sm hover:bg-surface-container">
+                <span className="truncate">{item.label}</span>
+                <input checked={selected.includes(value)} onChange={() => onToggle(value)} type="checkbox" />
+              </label>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <section
       ref={containerRef}
-      className="bg-white shadow-[0px_12px_32px_rgba(27,28,28,0.06)] rounded-xl p-2 mb-10 sticky top-20 z-40 border border-outline-variant/10 transition-all duration-300"
+      className="sticky top-20 z-40 mb-10 rounded-xl border border-outline-variant/10 bg-white p-2 shadow-[0px_12px_32px_rgba(27,28,28,0.06)]"
     >
       <div className="flex flex-col gap-4 p-2">
         {!isSticky && (
-          <div className="flex gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-            <div className="flex-1 relative flex items-center bg-white border border-outline-variant/50 rounded-lg overflow-hidden h-14">
-              <span className="material-symbols-outlined absolute left-4 text-secondary">
-                search
-              </span>
-              <input
-                className="w-full h-full pl-12 pr-32 border-none focus:ring-0 text-on-surface"
-                id="properties-search"
-                name="search"
-                placeholder="Tìm kiếm nhà đất..."
-                type="text"
-              />
-              <button className="absolute right-2 bg-primary text-white px-6 py-2 rounded font-bold text-sm hover:opacity-90">
-                Tìm kiếm
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+            <div className="relative h-14 flex-1 overflow-hidden rounded-lg border border-outline-variant/50 bg-white">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-secondary">search</span>
+              <input className="h-full w-full border-none pl-12 pr-4 text-on-surface focus:ring-0" id="properties-search" name="search" onChange={(event) => onKeywordInputChange(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && onSearch()} placeholder="Tìm kiếm nhà đất..." type="text" value={keywordInput} />
+            </div>
+            <div className="flex gap-2">
+              <button className="h-14 rounded-lg bg-primary px-5 py-2 text-sm font-bold text-white" onClick={onSearch} type="button">Tìm kiếm</button>
+              <button className="inline-flex h-14 items-center gap-1 rounded-lg border border-outline-variant/40 px-3 py-2 text-sm text-secondary" type="button">
+                <span className="material-symbols-outlined text-base">map</span>
+                Xem bản đồ
               </button>
             </div>
           </div>
         )}
+
         <div className="flex flex-wrap items-center gap-3">
           {isSticky && (
-            <div className="flex-1 min-w-[200px] relative flex items-center bg-white border border-outline-variant/50 rounded-lg overflow-hidden h-10 animate-in fade-in slide-in-from-left-2 duration-300">
-              <span className="material-symbols-outlined absolute left-3 text-secondary text-base">
-                search
-              </span>
-              <input
-                className="w-full h-full pl-10 pr-4 border-none focus:ring-0 text-sm text-on-surface"
-                id="properties-search-sticky"
-                name="search"
-                placeholder="Tìm kiếm..."
-                type="text"
-              />
+            <div className="flex min-w-[220px] flex-1 items-center gap-2">
+              <div className="relative h-10 flex-1 overflow-hidden rounded-lg border border-outline-variant/50 bg-white">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-base text-secondary">search</span>
+                <input className="h-full w-full border-none pl-10 pr-4 text-sm text-on-surface focus:ring-0" id="properties-search-sticky" name="search-sticky" onChange={(event) => onKeywordInputChange(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && onSearch()} placeholder="Tìm kiếm..." type="text" value={keywordInput} />
+              </div>
+              <button className="h-10 rounded bg-primary px-3 text-xs font-semibold text-white" onClick={onSearch} type="button"><span className="material-symbols-outlined text-sm">search</span></button>
+              <button className="inline-flex h-10 items-center gap-1 rounded border border-outline-variant/40 px-3 py-2 text-xs text-secondary" type="button"><span className="material-symbols-outlined text-sm">map</span>Bản đồ</button>
             </div>
           )}
-          <button className="flex items-center gap-2 px-4 py-2 border border-outline-variant/50 rounded-lg text-sm font-medium text-on-surface bg-white hover:bg-surface-container-low transition-colors">
-            <span className="material-symbols-outlined text-lg">tune</span>
-            Lọc
-          </button>
-          <div className="flex items-center gap-3 px-4 py-2 border border-outline-variant/50 rounded-lg bg-white">
-            <span className="flex items-center gap-1 text-sm font-medium text-secondary">
-              <span
-                className="material-symbols-outlined text-green-600 text-lg"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                verified
-              </span>
+
+          <div className="relative">
+            <button
+              className="relative flex items-center gap-2 rounded-lg border border-outline-variant/50 bg-white px-4 py-2 text-sm font-medium text-on-surface"
+              onClick={() => {
+                if (openPanel !== 'advanced') setDraftFilters({ ...filters })
+                togglePanel('advanced')
+              }}
+              type="button"
+            >
+              <span className="material-symbols-outlined text-lg">tune</span>
+              Lọc
+              {activeFilterCount > 0 && <span className="absolute -right-2 -top-2 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-white">{activeFilterCount}</span>}
+            </button>
+            <PropertiesAdvancedFilterPopup
+              isOpen={openPanel === 'advanced'}
+              filters={filters}
+              draftFilters={draftFilters}
+              onDraftChange={setDraftFilters}
+              onApply={(next) => {
+                onFiltersChange(next)
+                setDraftFilters(null)
+                setOpenPanel(null)
+              }}
+              onCancel={() => {
+                setDraftFilters(null)
+                setOpenPanel(null)
+              }}
+              onClear={() =>
+                setDraftFilters({
+                  ...(draftFilters ?? filters),
+                  verifiedOnly: false,
+                  propertyTypes: [],
+                  priceRangeIds: [],
+                  areaRangeIds: [],
+                  minPriceInput: '',
+                  maxPriceInput: '',
+                  minAreaInput: '',
+                  maxAreaInput: '',
+                  provinceCodes: [],
+                  wardCodes: [],
+                  streets: [],
+                  projectIds: [],
+                  directions: [],
+                  legalStatuses: [],
+                  bedroomsList: [],
+                  bathroomsList: [],
+                })
+              }
+              propertyTypeOptions={propertyTypeOptions}
+              regionOptions={regionOptions}
+              wardOptions={wardOptions}
+              projectOptions={projectOptions}
+              legalOptions={legalOptions}
+            />
+          </div>
+
+          <div className="flex items-center gap-3 rounded-lg border border-outline-variant/50 bg-white px-4 py-2">
+            <span className="inline-flex items-center gap-1 text-sm font-medium text-secondary">
+              <span className="material-symbols-outlined text-[16px] text-green-700">verified</span>
               Tin xác thực
             </span>
-            <label className="relative inline-flex items-center cursor-pointer">
+            <label className="relative inline-flex cursor-pointer items-center">
               <input
-                className="sr-only peer"
-                id="verified-only"
-                name="verifiedOnly"
+                checked={filters.verifiedOnly}
+                className="peer sr-only"
+                onChange={(e) => onFiltersChange({ ...filters, verifiedOnly: e.target.checked })}
                 type="checkbox"
               />
-              <div className="w-9 h-5 bg-zinc-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+              <span className="h-6 w-11 rounded-full bg-zinc-300 transition-colors peer-checked:bg-green-700" />
+              <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-all peer-checked:left-[22px]" />
             </label>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative">
-              <button
-                className="flex items-center gap-2 pl-4 pr-1 py-2 border border-outline-variant/50 rounded-lg text-sm text-on-surface bg-white hover:bg-surface-container-low transition-colors"
-                onClick={() => togglePanel('type')}
-                type="button"
-              >
-                Loại nhà đất
-                {typeCount > 0 && (
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
-                    {typeCount}
-                  </span>
-                )}
-                <span className="material-symbols-outlined text-sm">keyboard_arrow_down</span>
-              </button>
-              {renderPanel(openPanel === 'type', propertyTypes, selectedTypes, (value) =>
-                toggleValue(value, selectedTypes, setSelectedTypes),
-              )}
-            </div>
-            <div className="relative">
-              <button
-                className="flex items-center gap-2 pl-4 pr-1 py-2 border border-outline-variant/50 rounded-lg text-sm text-on-surface bg-white hover:bg-surface-container-low transition-colors"
-                onClick={() => togglePanel('price')}
-                type="button"
-              >
-                Khoảng giá
-                {priceCount > 0 && (
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
-                    {priceCount}
-                  </span>
-                )}
-                <span className="material-symbols-outlined text-sm">keyboard_arrow_down</span>
-              </button>
-              {renderPanel(openPanel === 'price', priceRanges, selectedPrices, (value) =>
-                toggleValue(value, selectedPrices, setSelectedPrices),
-              )}
-            </div>
-            <div className="relative">
-              <button
-                className="flex items-center gap-2 pl-4 pr-1 py-2 border border-outline-variant/50 rounded-lg text-sm text-on-surface bg-white hover:bg-surface-container-low transition-colors"
-                onClick={() => togglePanel('area')}
-                type="button"
-              >
-                Diện tích
-                {areaCount > 0 && (
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
-                    {areaCount}
-                  </span>
-                )}
-                <span className="material-symbols-outlined text-sm">keyboard_arrow_down</span>
-              </button>
-              {renderPanel(openPanel === 'area', areaRanges, selectedAreas, (value) =>
-                toggleValue(value, selectedAreas, setSelectedAreas),
-              )}
-            </div>
-            <div className="relative">
-              <button
-                className="flex items-center gap-2 pl-4 pr-1 py-2 border border-outline-variant/50 rounded-lg text-sm text-on-surface bg-white hover:bg-surface-container-low transition-colors"
-                onClick={() => togglePanel('region')}
-                type="button"
-              >
-                Khu vực
-                {regionCount > 0 && (
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
-                    {regionCount}
-                  </span>
-                )}
-                <span className="material-symbols-outlined text-sm">keyboard_arrow_down</span>
-              </button>
-              {renderPanel(openPanel === 'region', regions, selectedRegions, (value) =>
-                toggleValue(value, selectedRegions, setSelectedRegions),
-              )}
-            </div>
+
+          <div className="relative">
+            <button className="flex items-center gap-2 rounded-lg border border-outline-variant/50 bg-white px-4 py-2 text-sm" onClick={() => togglePanel('type')} type="button">
+              Loại nhà đất {filters.propertyTypes.length > 0 && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">{filters.propertyTypes.length}</span>}
+            </button>
+            {renderSimplePanel(openPanel === 'type', propertyTypeOptions, filters.propertyTypes, (value) => toggleStringValue('propertyTypes', value))}
+          </div>
+
+          <div className="relative">
+            <button className="flex items-center gap-2 rounded-lg border border-outline-variant/50 bg-white px-4 py-2 text-sm" onClick={() => togglePanel('price')} type="button">
+              Khoảng giá {filters.priceRangeIds.length > 0 && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">{filters.priceRangeIds.length}</span>}
+            </button>
+            {renderSimplePanel(openPanel === 'price', priceRangeOptions, filters.priceRangeIds, (value) => toggleStringValue('priceRangeIds', value))}
+          </div>
+
+          <div className="relative">
+            <button className="flex items-center gap-2 rounded-lg border border-outline-variant/50 bg-white px-4 py-2 text-sm" onClick={() => togglePanel('area')} type="button">
+              Diện tích {filters.areaRangeIds.length > 0 && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">{filters.areaRangeIds.length}</span>}
+            </button>
+            {renderSimplePanel(openPanel === 'area', areaRangeOptions, filters.areaRangeIds, (value) => toggleStringValue('areaRangeIds', value))}
+          </div>
+
+          <div className="relative">
+            <button className="flex items-center gap-2 rounded-lg border border-outline-variant/50 bg-white px-4 py-2 text-sm" onClick={() => togglePanel('region')} type="button">
+              Khu vực {filters.provinceCodes.length > 0 && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">{filters.provinceCodes.length}</span>}
+            </button>
+            {renderSimplePanel(openPanel === 'region', regionOptions, filters.provinceCodes, (value) => toggleStringValue('provinceCodes', value))}
           </div>
         </div>
       </div>

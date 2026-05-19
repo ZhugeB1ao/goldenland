@@ -1,10 +1,11 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import {
   fetchFeaturedArticlesBasedOnCategoryId,
   fetchTopViewedRealEstateNews,
-} from '@/app/services/articles'
+} from '../services/articles'
 import { ArticleHeroItem, ArticleListItem, type Article } from './ArticleItems'
 
 type ArticlesCategory = {
@@ -202,7 +203,7 @@ export function FeaturedArticlesSection() {
             })}
           </div>
         </div>
-        <a
+        <Link
           className="group mb-2 flex items-center gap-1 font-semibold text-primary"
           href="/articles"
         >
@@ -210,7 +211,7 @@ export function FeaturedArticlesSection() {
           <span className="material-symbols-outlined transition-transform group-hover:translate-x-1">
             arrow_forward
           </span>
-        </a>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-12">

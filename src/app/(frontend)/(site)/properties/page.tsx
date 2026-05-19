@@ -1,13 +1,29 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Property } from '@/payload-types'
-import { fetchPropertiesByPostType, fetchPropertyFilterOptions } from './services/properties'
+import {
+  fetchPropertiesByPostType,
+  fetchPropertyFilterOptions,
+  type PropertyFiltersState,
+  type PropertySortValue,
+} from './services/properties'
 import { PropertiesFilterBar } from './components/PropertiesFilterBar'
 import { PropertiesHeader } from './components/PropertiesHeader'
 import { PropertiesList } from './components/PropertiesList'
 import { PropertiesSidebar } from './components/PropertiesSidebar'
-import { PropertiesSortBar } from './components/PropertiesSortBar'
+
+type RangeOption = {
+  id: string
+  label: string
+  min: number
+  max: number
+}
+
+type SelectOption = {
+  value: string
+  label: string
+}
 
 const newsItems = [
   { title: 'Dự báo thị trường bất động sản 2026', href: '/articles' },
@@ -29,29 +45,76 @@ const propertyTypeLabels: Record<string, string> = {
   commercial: 'Mặt bằng',
 }
 
+const dynamicLabelMap: Record<string, { groupLabel: string; valueLabel: Record<string, string> }> = {
+  direction: {
+    groupLabel: 'Hướng',
+    valueLabel: {
+      east: 'Đông',
+      west: 'Tây',
+      south: 'Nam',
+      north: 'Bắc',
+      northeast: 'Đông Bắc',
+      southeast: 'Đông Nam',
+      northwest: 'Tây Bắc',
+      southwest: 'Tây Nam',
+    },
+  },
+  legalStatus: {
+    groupLabel: 'Pháp lý',
+    valueLabel: {
+      red_book: 'Sổ đỏ/Sổ hồng',
+      sale_contract: 'Hợp đồng mua bán',
+      pending: 'Đang chờ sổ',
+      other: 'Khác',
+    },
+  },
+  furnitureStatus: {
+    groupLabel: 'Nội thất',
+    valueLabel: {
+      luxury: 'Cao cấp',
+      full: 'Đầy đủ',
+      basic: 'Cơ bản',
+      none: 'Không nội thất',
+    },
+  },
+  bedrooms: { groupLabel: 'Phòng ngủ', valueLabel: {} },
+  bathrooms: { groupLabel: 'Phòng tắm', valueLabel: {} },
+}
+
 const numberFormatter = new Intl.NumberFormat('vi-VN')
 const tyFormatter = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 })
 
 const buildRanges = (
   range: { min: number | null; max: number | null },
   steps: number,
+  idPrefix: string,
   suffix?: string,
-): string[] => {
+): RangeOption[] => {
   if (range.min === null || range.max === null) return []
   if (range.min === range.max) {
-    return [`${numberFormatter.format(range.min)}${suffix ? ` ${suffix}` : ''}`]
+    return [
+      {
+        id: `${idPrefix}-0`,
+        min: range.min,
+        max: range.max,
+        label: `${numberFormatter.format(range.min)}${suffix ? ` ${suffix}` : ''}`,
+      },
+    ]
   }
 
   const diff = range.max - range.min
   const step = diff <= 0 ? 1 : Math.ceil(diff / steps)
-  const labels: string[] = []
+  const labels: RangeOption[] = []
 
   for (let index = 0; index < steps; index += 1) {
     const start = range.min + step * index
     const end = index === steps - 1 ? range.max : Math.min(range.max, start + step)
-    labels.push(
-      `${numberFormatter.format(start)} - ${numberFormatter.format(end)}${suffix ? ` ${suffix}` : ''}`,
-    )
+    labels.push({
+      id: `${idPrefix}-${index}`,
+      min: start,
+      max: end,
+      label: `${numberFormatter.format(start)} - ${numberFormatter.format(end)}${suffix ? ` ${suffix}` : ''}`,
+    })
   }
 
   return labels
@@ -60,24 +123,32 @@ const buildRanges = (
 const buildPriceRanges = (
   range: { min: number | null; max: number | null },
   steps: number,
-): string[] => {
+): RangeOption[] => {
   if (range.min === null || range.max === null) return []
-
-  const minTy = range.min / 1_000_000_000
-  const maxTy = range.max / 1_000_000_000
-
-  if (minTy === maxTy) {
-    return [`${tyFormatter.format(minTy)} tỷ`]
+  if (range.min === range.max) {
+    return [
+      {
+        id: 'price-0',
+        min: range.min,
+        max: range.max,
+        label: `${tyFormatter.format(range.min / 1_000_000_000)} tỷ`,
+      },
+    ]
   }
 
-  const diff = maxTy - minTy
-  const step = diff <= 0 ? 1 : diff / steps
-  const labels: string[] = []
+  const diff = range.max - range.min
+  const step = diff <= 0 ? 1 : Math.ceil(diff / steps)
+  const labels: RangeOption[] = []
 
   for (let index = 0; index < steps; index += 1) {
-    const start = minTy + step * index
-    const end = index === steps - 1 ? maxTy : minTy + step * (index + 1)
-    labels.push(`${tyFormatter.format(start)} - ${tyFormatter.format(end)} tỷ`)
+    const start = range.min + step * index
+    const end = index === steps - 1 ? range.max : Math.min(range.max, start + step)
+    labels.push({
+      id: `price-${index}`,
+      min: start,
+      max: end,
+      label: `${tyFormatter.format(start / 1_000_000_000)} - ${tyFormatter.format(end / 1_000_000_000)} tỷ`,
+    })
   }
 
   return labels
@@ -89,55 +160,178 @@ export default function PropertiesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const [propertyTypes, setPropertyTypes] = useState<string[]>([])
-  const [priceRanges, setPriceRanges] = useState<string[]>([])
-  const [areaRanges, setAreaRanges] = useState<string[]>([])
-  const [regions, setRegions] = useState<string[]>([])
+
+  const [propertyTypeOptions, setPropertyTypeOptions] = useState<SelectOption[]>([])
+  const [regionOptions, setRegionOptions] = useState<SelectOption[]>([])
+  const [wardOptions, setWardOptions] = useState<Array<SelectOption & { provinceCode: string }>>([])
+  const [streetOptions, setStreetOptions] = useState<
+    Array<SelectOption & { provinceCode: string; wardCode: string }>
+  >([])
+  const [projectOptions, setProjectOptions] = useState<
+    Array<SelectOption & { provinceCode: string; wardCode: string }>
+  >([])
+  const [priceRangeOptions, setPriceRangeOptions] = useState<RangeOption[]>([])
+  const [areaRangeOptions, setAreaRangeOptions] = useState<RangeOption[]>([])
+  const [dynamicAttributeOptions, setDynamicAttributeOptions] = useState<
+    Array<{ key: string; label: string; options: SelectOption[] }>
+  >([])
+
+  const [keywordInput, setKeywordInput] = useState('')
+  const [sortValue, setSortValue] = useState<PropertySortValue>('default')
+  const [filters, setFilters] = useState({
+    verifiedOnly: false,
+    propertyTypes: [] as string[],
+    priceRangeIds: [] as string[],
+    areaRangeIds: [] as string[],
+    minPriceInput: '',
+    maxPriceInput: '',
+    minAreaInput: '',
+    maxAreaInput: '',
+    provinceCodes: [] as string[],
+    wardCodes: [] as string[],
+    streets: [] as string[],
+    projectIds: [] as string[],
+    directions: [] as string[],
+    legalStatuses: [] as string[],
+    bedroomsList: [] as number[],
+    bathroomsList: [] as number[],
+  })
+  const [keyword, setKeyword] = useState('')
+
+  const requestFilters = useMemo<PropertyFiltersState>(() => {
+    const selectedPriceRanges = priceRangeOptions.filter((option) => filters.priceRangeIds.includes(option.id))
+    const selectedAreaRanges = areaRangeOptions.filter((option) => filters.areaRangeIds.includes(option.id))
+    const inputMinPrice = Number(filters.minPriceInput)
+    const inputMaxPrice = Number(filters.maxPriceInput)
+    const inputMinArea = Number(filters.minAreaInput)
+    const inputMaxArea = Number(filters.maxAreaInput)
+    const listMinPrice =
+      selectedPriceRanges.length > 0 ? Math.min(...selectedPriceRanges.map((item) => item.min)) : undefined
+    const listMaxPrice =
+      selectedPriceRanges.length > 0 ? Math.max(...selectedPriceRanges.map((item) => item.max)) : undefined
+    const listMinArea =
+      selectedAreaRanges.length > 0 ? Math.min(...selectedAreaRanges.map((item) => item.min)) : undefined
+    const listMaxArea =
+      selectedAreaRanges.length > 0 ? Math.max(...selectedAreaRanges.map((item) => item.max)) : undefined
+
+    return {
+      keyword: keyword || undefined,
+      verifiedOnly: filters.verifiedOnly,
+      propertyTypes: filters.propertyTypes,
+      provinceCodes: filters.provinceCodes,
+      wardCodes: filters.wardCodes,
+      streets: filters.streets,
+      projectIds: filters.projectIds,
+      minPrice: Number.isFinite(inputMinPrice) && inputMinPrice > 0 ? inputMinPrice : listMinPrice,
+      maxPrice: Number.isFinite(inputMaxPrice) && inputMaxPrice > 0 ? inputMaxPrice : listMaxPrice,
+      minArea: Number.isFinite(inputMinArea) && inputMinArea > 0 ? inputMinArea : listMinArea,
+      maxArea: Number.isFinite(inputMaxArea) && inputMaxArea > 0 ? inputMaxArea : listMaxArea,
+      directions: filters.directions,
+      legalStatuses: filters.legalStatuses,
+      bedroomsList: filters.bedroomsList,
+      bathroomsList: filters.bathroomsList,
+    }
+  }, [areaRangeOptions, filters, keyword, priceRangeOptions])
+
+  useEffect(() => {
+    async function loadFilterOptions() {
+      try {
+        const filtersResponse = await fetchPropertyFilterOptions()
+        if (!filtersResponse?.success) return
+
+        setPropertyTypeOptions(
+          filtersResponse.propertyTypes.map((type) => ({
+            value: type,
+            label: propertyTypeLabels[type] ?? type,
+          })),
+        )
+        setPriceRangeOptions(buildPriceRanges(filtersResponse.priceRange, 5))
+        setAreaRangeOptions(buildRanges(filtersResponse.areaRange, 5, 'area', 'm²'))
+        setRegionOptions(filtersResponse.regions.map((region) => ({ value: region.code, label: region.label })))
+        setWardOptions(
+          filtersResponse.wards.map((ward) => ({
+            value: ward.code,
+            label: ward.label,
+            provinceCode: ward.provinceCode,
+          })),
+        )
+        setStreetOptions(
+          filtersResponse.streets.map((street) => ({
+            value: street.name,
+            label: street.name,
+            provinceCode: street.provinceCode,
+            wardCode: street.wardCode,
+          })),
+        )
+        setProjectOptions(
+          filtersResponse.projects.map((project) => ({
+            value: project.id,
+            label: project.name,
+            provinceCode: project.provinceCode,
+            wardCode: project.wardCode,
+          })),
+        )
+        setDynamicAttributeOptions(
+          filtersResponse.dynamicAttributes
+            .filter((group) => dynamicLabelMap[group.key])
+            .map((group) => ({
+              key: group.key,
+              label: dynamicLabelMap[group.key].groupLabel,
+              options: group.values.map((value) => ({
+                value,
+                label: dynamicLabelMap[group.key].valueLabel[value] ?? value,
+              })),
+            })),
+        )
+      } catch (error) {
+        console.error('Failed to fetch filters:', error)
+      }
+    }
+
+    void loadFilterOptions()
+  }, [])
 
   useEffect(() => {
     async function loadProperties() {
       setIsLoading(true)
       try {
-        const [propertiesResponse, filtersResponse] = await Promise.all([
-          fetchPropertiesByPostType({ limit: 10, page: 1 }),
-          fetchPropertyFilterOptions(),
-        ])
-        setProperties(propertiesResponse.data)
-        setTotalDocs(propertiesResponse.totalDocs)
-        setTotalPages(propertiesResponse.totalPages)
-        setPage(1)
-
-        if (filtersResponse?.success) {
-          setPropertyTypes(
-            filtersResponse.propertyTypes.map((type) => propertyTypeLabels[type] ?? type),
-          )
-          setPriceRanges(buildPriceRanges(filtersResponse.priceRange, 5))
-          setAreaRanges(buildRanges(filtersResponse.areaRange, 5, 'm²'))
-          setRegions(filtersResponse.regions.map((region) => region.label))
-        }
+        const response = await fetchPropertiesByPostType({
+          limit: 10,
+          page,
+          sort: sortValue,
+          filters: requestFilters,
+        })
+        setProperties(response.data)
+        setTotalDocs(response.totalDocs)
+        setTotalPages(response.totalPages)
       } catch (error) {
         console.error('Failed to fetch properties:', error)
       } finally {
         setIsLoading(false)
       }
     }
-    loadProperties()
-  }, [])
 
-  const handlePageChange = async (nextPage: number) => {
+    void loadProperties()
+  }, [page, requestFilters, sortValue])
+
+  const handlePageChange = (nextPage: number) => {
     if (isLoading || nextPage === page || nextPage < 1 || nextPage > totalPages) return
-    setIsLoading(true)
-    try {
-      const response = await fetchPropertiesByPostType({ limit: 10, page: nextPage })
-      setProperties(response.data)
-      setPage(nextPage)
-      setTotalPages(response.totalPages)
-      setTotalDocs(response.totalDocs)
-    } catch (error) {
-      console.error('Failed to change page:', error)
-    } finally {
-      setIsLoading(false)
-    }
+    setPage(nextPage)
+  }
+
+  const handleSortChange = (nextSort: PropertySortValue) => {
+    setSortValue(nextSort)
+    setPage(1)
+  }
+
+  const handleFiltersChange = (nextFilters: typeof filters) => {
+    setFilters(nextFilters)
+    setPage(1)
+  }
+
+  const handleSearch = () => {
+    setKeyword(keywordInput.trim())
+    setPage(1)
   }
 
   const pageNumbers = (() => {
@@ -148,35 +342,55 @@ export default function PropertiesPage() {
     return Array.from({ length: maxPagesToShow }, (_, i) => start + i)
   })()
 
+  const headline = (() => {
+    if (filters.propertyTypes.length === 1) {
+      const selected = propertyTypeOptions.find((option) => option.value === filters.propertyTypes[0])
+      if (selected) return `Bán ${selected.label.toLowerCase()} trên toàn quốc`
+    }
+    return 'Bán nhà đất trên toàn quốc'
+  })()
+
   return (
-    <main className="pt-8 pb-16 max-w-screen-2xl mx-auto px-8">
+    <main className="mx-auto max-w-screen-2xl px-8 pb-16 pt-8">
       <PropertiesFilterBar
-        propertyTypes={propertyTypes}
-        priceRanges={priceRanges}
-        areaRanges={areaRanges}
-        regions={regions}
+        areaRangeOptions={areaRangeOptions}
+        dynamicAttributeOptions={dynamicAttributeOptions}
+        filters={filters}
+        keywordInput={keywordInput}
+        onFiltersChange={handleFiltersChange}
+        onKeywordInputChange={setKeywordInput}
+        onSearch={handleSearch}
+        priceRangeOptions={priceRangeOptions}
+        propertyTypeOptions={propertyTypeOptions}
+        regionOptions={regionOptions}
+        wardOptions={wardOptions}
+        streetOptions={streetOptions}
+        projectOptions={projectOptions}
       />
 
-      <PropertiesHeader totalDocs={totalDocs} />
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-12">
         <div className="lg:col-span-8">
-          <PropertiesSortBar />
+          <PropertiesHeader
+            headline={headline}
+            onSortChange={handleSortChange}
+            sortValue={sortValue}
+            totalDocs={totalDocs}
+          />
 
           <PropertiesList
-            properties={properties}
             isLoading={isLoading}
-            totalPages={totalPages}
+            onPageChange={handlePageChange}
             page={page}
             pageNumbers={pageNumbers}
-            onPageChange={handlePageChange}
+            properties={properties}
+            totalPages={totalPages}
           />
         </div>
         <PropertiesSidebar
-          priceRanges={priceRanges}
-          areaRanges={areaRanges}
-          regions={regions}
+          areaRanges={areaRangeOptions.map((range) => range.label)}
           news={newsItems}
+          priceRanges={priceRangeOptions.map((range) => range.label)}
+          regions={regionOptions.map((region) => region.label)}
         />
       </div>
     </main>

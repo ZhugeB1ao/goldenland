@@ -98,7 +98,7 @@ async function seed() {
   }
 
   const userIds = users.map((user) => user.id)
-  const ownerUser = users.find((user) => user.id === 1 || user.id === '1')
+  const ownerUser = users.find((user) => String(user.id) === '1')
 
   if (!ownerUser) {
     console.error('User id=1 not found. Please seed users or adjust the target user id.')
@@ -169,7 +169,7 @@ async function seed() {
     const description = `${getRandomItem(DESCRIPTIONS)} ${getRandomItem(DESCRIPTIONS)}`
     
     const price = getRandomInt(1, 20) * 1000000000 // 1 to 20 tỷ
-    const priceUnit: 'total' = 'total'
+    const priceUnit = 'total' as const
 
     const area = getRandomInt(30, 300)
     const bedrooms = propertyType === 'land' || propertyType === 'warehouse' ? 0 : getRandomInt(1, 5)

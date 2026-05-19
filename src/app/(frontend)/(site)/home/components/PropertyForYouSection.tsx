@@ -1,6 +1,6 @@
 'use client'
 import type { Property } from '@/payload-types'
-import { fetchNewProperties } from '@/app/services/properties'
+import { fetchNewProperties } from '../services/properties'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { PropertyGridItem, type PropertyItem } from '../../components/PropertyGridItem'
@@ -87,9 +87,9 @@ export function PropertyForYouSection() {
 
         <div className="flex items-center gap-6">
           <div className="hidden items-center gap-4 text-sm font-medium md:flex">
-            <a className="text-secondary transition-colors hover:text-primary" href="/properties">
+            <Link className="text-secondary transition-colors hover:text-primary" href="/properties">
               Tin nhà đất bán mới nhất
-            </a>
+            </Link>
           </div>
         </div>
       </div>

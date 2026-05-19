@@ -1,6 +1,21 @@
 import divisions from './src/app/data/vietnam-divisions.json'
 
-const normalizeCode = (value) => {
+type DivisionWard = {
+  Code: string
+  FullName: string
+}
+
+type Division = DivisionWard & {
+  Wards: DivisionWard[]
+}
+
+type LocationProperty = {
+  provinceCode?: string | number | null
+  wardCode?: string | number | null
+  address?: string | null
+}
+
+const normalizeCode = (value: string | number | null | undefined): string => {
   if (value === null || value === undefined) return ''
   const raw = String(value).trim()
   if (!raw) return ''
@@ -8,9 +23,9 @@ const normalizeCode = (value) => {
   return trimmed || '0'
 }
 
-const divisionData = divisions
-const provinceNameByCode = new Map()
-const wardNameByProvinceAndCode = new Map()
+const divisionData = divisions as Division[]
+const provinceNameByCode = new Map<string, string>()
+const wardNameByProvinceAndCode = new Map<string, string>()
 
 for (const province of divisionData) {
   const provinceKey = normalizeCode(province.Code)
@@ -23,7 +38,7 @@ for (const province of divisionData) {
   }
 }
 
-function formatLocation(property) {
+function formatLocation(property: LocationProperty): string {
   const provinceKey = normalizeCode(property.provinceCode)
   const wardKey = normalizeCode(property.wardCode)
   const provinceName = provinceKey ? provinceNameByCode.get(provinceKey) : undefined

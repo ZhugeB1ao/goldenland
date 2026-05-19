@@ -5,6 +5,21 @@ import { getPayload } from 'payload'
 import { createClient } from '@supabase/supabase-js'
 import fs from 'fs'
 import path from 'path'
+import type { Property } from '../src/payload-types'
+
+type DivisionWard = {
+  Code: string
+  FullName: string
+}
+
+type Division = DivisionWard & {
+  Wards?: DivisionWard[]
+}
+
+type PropertyType = NonNullable<Property['propertyType']>
+type PropertyDirection = NonNullable<Property['direction']>
+type PropertyLegalStatus = NonNullable<Property['legalStatus']>
+type PropertyFurnitureStatus = NonNullable<Property['furnitureStatus']>
 
 const DESCRIPTION_INTROS = [
   'Khu dân cư hiện hữu, an ninh tốt, đường thông thoáng.',
@@ -84,10 +99,10 @@ const STREET_NAMES = [
   'Quang Trung'
 ]
 
-const PROPERTY_TYPES_NO_APARTMENT = ['house', 'land', 'villa', 'townhouse', 'shophouse', 'warehouse', 'commercial']
-const DIRECTIONS = ['east', 'west', 'south', 'north', 'northeast', 'southeast', 'northwest', 'southwest']
-const LEGAL_STATUSES = ['red_book', 'sale_contract', 'pending', 'other']
-const FURNITURE_STATUSES = ['luxury', 'full', 'basic', 'none']
+const PROPERTY_TYPES_NO_APARTMENT = ['house', 'land', 'villa', 'townhouse', 'shophouse', 'warehouse', 'commercial'] as const satisfies readonly PropertyType[]
+const DIRECTIONS = ['east', 'west', 'south', 'north', 'northeast', 'southeast', 'northwest', 'southwest'] as const satisfies readonly PropertyDirection[]
+const LEGAL_STATUSES = ['red_book', 'sale_contract', 'pending', 'other'] as const satisfies readonly PropertyLegalStatus[]
+const FURNITURE_STATUSES = ['luxury', 'full', 'basic', 'none'] as const satisfies readonly PropertyFurnitureStatus[]
 
 const SUPABASE_URL = process.env.SUPABASE_URL || ''
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -102,7 +117,7 @@ const DUMMY_IMAGE_URLS = [
 ]
 
 const getRandomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min
-const getRandomItem = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]
+const getRandomItem = <T>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)]
 const getRandomBoolean = () => Math.random() >= 0.5
 
 const PROPERTY_TYPE_LABELS: Record<string, string> = {
@@ -230,7 +245,7 @@ async function seed() {
 
   // Read vietnam-divisions.json
   const divisionsPath = path.resolve(process.cwd(), 'src/app/data/vietnam-divisions.json')
-  const divisions = JSON.parse(fs.readFileSync(divisionsPath, 'utf8'))
+  const divisions = JSON.parse(fs.readFileSync(divisionsPath, 'utf8')) as Division[]
 
   console.log('Downloading dummy images into memory...')
   const imageBuffers: ArrayBuffer[] = []
@@ -258,18 +273,18 @@ async function seed() {
     const hasProject = Math.random() >= 0.3
     const projectId = hasProject ? getRandomInt(1, 33) : null
 
-    let propertyType = 'apartment'
+    let propertyType: PropertyType = 'apartment'
     if (!hasProject) {
       propertyType = getRandomItem(PROPERTY_TYPES_NO_APARTMENT)
     } else {
-      const projectTypes = ['apartment', 'apartment', 'villa', 'townhouse', 'shophouse', 'condotel', 'land']
+      const projectTypes = ['apartment', 'apartment', 'villa', 'townhouse', 'shophouse', 'condotel', 'land'] as const satisfies readonly PropertyType[]
       propertyType = getRandomItem(projectTypes)
     }
 
     const listingType = 'sale'
     
     const price = getRandomInt(1, 20) * 1000000000
-    const priceUnit: 'total' = 'total'
+    const priceUnit = 'total' as const
 
     const userId = getRandomInt(1, 2)
     const area = getRandomInt(30, 300)

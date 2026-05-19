@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import Link from 'next/link'
 
 export function Breadcrumb({ title }: { title: string }) {
   return (
@@ -8,9 +9,9 @@ export function Breadcrumb({ title }: { title: string }) {
     >
       <ol className="inline-flex items-center space-x-1 md:space-x-3">
         <li className="inline-flex items-center">
-          <a className="hover:text-primary transition-colors" href="/properties">
+          <Link className="hover:text-primary transition-colors" href="/properties">
             Nhà đất bán
-          </a>
+          </Link>
         </li>
         <li>
           <div className="flex items-center">

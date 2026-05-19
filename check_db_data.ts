@@ -25,7 +25,8 @@ async function checkDatabase() {
     console.log('--- DATABASE DATA (projects table) ---')
     console.log(JSON.stringify(res.rows, null, 2))
   } catch (error) {
-    console.error('Error querying projects table:', error.message)
+    const message = error instanceof Error ? error.message : String(error)
+    console.error('Error querying projects table:', message)
     
     // Maybe the table name is different, let's list tables
     const tables = await client.query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
