@@ -34,7 +34,7 @@ export function SignInForm({ onClose, onSwitchToRegister, onSuccess }: SignInFor
 
       const role = result.payload.user?.role
       if (role === 'admin') {
-        router.push('/admin')
+        router.push('/quan-tri')
         return
       }
 
@@ -90,7 +90,7 @@ export function SignInForm({ onClose, onSwitchToRegister, onSuccess }: SignInFor
                 type="text"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                disabled={loading}
+                disabled={!!loading}
                 placeholder="your@email.com"
                 className="w-full border border-gray-200 rounded-md px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition disabled:opacity-50 disabled:cursor-not-allowed"
               />
@@ -104,7 +104,7 @@ export function SignInForm({ onClose, onSwitchToRegister, onSuccess }: SignInFor
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  disabled={loading}
+                  disabled={!!loading}
                   className="w-full border border-gray-200 rounded-md px-4 py-2.5 pr-10 text-sm text-gray-800 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <button
@@ -162,7 +162,7 @@ export function SignInForm({ onClose, onSwitchToRegister, onSuccess }: SignInFor
                   type="checkbox"
                   checked={rememberMe}
                   onChange={() => setRememberMe(!rememberMe)}
-                  disabled={loading}
+                  disabled={!!loading}
                   className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <span className="text-sm text-gray-600">Nhớ tài khoản</span>
@@ -177,7 +177,7 @@ export function SignInForm({ onClose, onSwitchToRegister, onSuccess }: SignInFor
             {/* Login Button */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={!!loading}
               className="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-semibold py-3 rounded-md transition text-sm tracking-wide disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}

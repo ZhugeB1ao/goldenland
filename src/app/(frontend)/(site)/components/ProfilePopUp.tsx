@@ -243,6 +243,27 @@ export default function ProfilePopUp() {
         </p>
       </div>
 
+      {/* Admin shortcut */}
+      {user?.role === 'admin' && (
+        <a
+          href="/quan-tri"
+          className="flex items-center gap-3 px-4 py-3 bg-amber-50 hover:bg-amber-100 border-b border-amber-100 transition-colors"
+        >
+          <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
+              <path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z" strokeLinejoin="round" />
+            </svg>
+          </span>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-700">Trang quản trị</p>
+            <p className="text-xs text-amber-600">Dashboard, duyệt tin, báo cáo...</p>
+          </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-amber-600">
+            <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </a>
+      )}
+
       {/* Main Menu */}
       <div className="py-1">
         {menuItems.map((item, idx) => (

@@ -53,6 +53,7 @@ import {
 import { myDashboard } from './endpoints/myDashboard'
 import { meProfile } from './endpoints/me'
 import { projectDetail, projects } from './endpoints/projects'
+import { adminDashboardStats } from './endpoints/adminDashboard'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -88,6 +89,7 @@ export default buildConfig({
     meProfile,
     projects,
     projectDetail,
+    adminDashboardStats,
   ],
   collections: [Users, Profiles, Properties, Projects, Media, Investors, Articles, ArticleCategories, Banners, Contacts, Reports, Packages, PostingPrices, Vouchers, Orders,
     Notifications, Favorites, ViewHistory, SpamBlacklist
