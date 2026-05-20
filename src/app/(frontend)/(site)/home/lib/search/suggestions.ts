@@ -127,6 +127,8 @@ const createDistrictTagSuggestion = (
 // Keep suggestion scores within a predictable display range.
 const clampSuggestionScore = (score: number): number => Math.min(score, 220)
 
+// Legacy utility: suggestion chips were removed from the active Home search flow.
+// Kept for potential reuse in other search UIs.
 // Return ranked suggestions from history, catalog tags, and projects.
 export function getSearchTagSuggestions(
   input: string,
@@ -277,11 +279,13 @@ export function getSearchTagSuggestions(
   // ]
 }
 
+// Legacy utility for tag suggestion UI, currently not used in active Home flow.
 // Return the normalized suffix used for matching suggestions.
 export function getSearchSuggestionFragment(input: string): string {
   return getSuggestionFragments(input)[0] ?? ''
 }
 
+// Legacy utility for project suggestion prefetch, currently not used in active Home flow.
 // Return the raw suffix used to fetch project suggestions.
 export function getSearchSuggestionFragmentRaw(input: string): string {
   const rawInput = compactWhitespace(input)

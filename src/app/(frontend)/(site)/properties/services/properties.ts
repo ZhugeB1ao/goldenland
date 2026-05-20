@@ -28,6 +28,7 @@ export type PropertiesByPostTypeResponse = {
 
 export type PropertyFiltersState = {
   keyword?: string
+  district?: number
   verifiedOnly?: boolean
   propertyTypes?: string[]
   provinceCodes?: string[]
@@ -92,6 +93,7 @@ export async function fetchPropertiesByPostType(
     limit: typeof params?.limit === 'number' ? params.limit : 10,
     page: typeof params?.page === 'number' ? params.page : 1,
     keyword: filters?.keyword || undefined,
+    district: typeof filters?.district === 'number' ? filters.district : undefined,
     verifiedOnly: filters?.verifiedOnly ? 'true' : undefined,
     propertyTypes: filters?.propertyTypes?.length ? filters.propertyTypes.join(',') : undefined,
     provinceCodes: filters?.provinceCodes?.length ? filters.provinceCodes.join(',') : undefined,

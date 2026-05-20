@@ -80,6 +80,7 @@ export async function searchPropertiesByParsed(
 }
 
 // Search projects using keyword and location from parsed input.
+// Legacy path: project tab is hidden from active Home search flow for now.
 export async function searchProjectsByParsed(
   parsed: ParsedSearchResult,
   options?: SearchOptions,
@@ -124,6 +125,7 @@ export async function searchNewsByParsed(
 }
 
 // Run the correct search group for the active tab.
+// Legacy path for Home: active flow now routes directly by tab instead of running hybrid blocks on Home.
 export async function runHybridSearch(
   parsed: ParsedSearchResult,
   options?: SearchOptions,

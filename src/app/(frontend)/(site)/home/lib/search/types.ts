@@ -3,6 +3,7 @@ export type SearchTab = 'all' | 'property' | 'project' | 'news'
 export type SearchChipKey =
   | 'district'
   | 'province'
+  | 'ward'
   | 'bedrooms'
   | 'bathrooms'
   | 'price'
@@ -25,6 +26,7 @@ export type SearchChip = {
 export type ParsedSearchFilters = {
   district?: number
   provinceCode?: string
+  wardCode?: string
   bedrooms?: number
   bathrooms?: number
   minPrice?: number

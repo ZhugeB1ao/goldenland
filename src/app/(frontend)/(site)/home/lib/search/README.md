@@ -2,6 +2,9 @@
 
 Thư mục `home/lib/search` cung cấp bộ xử lý tìm kiếm tự nhiên (free-text) cho trang Home, gồm parse filter, lịch sử tìm kiếm, autocomplete tag và thao tác chip.
 
+> Cập nhật mới: luồng Home hiện tại đã bỏ UI chips/suggestion và tab `all`/`project`.
+> Các module `chips`, `suggestions`, `history` đang được giữ ở trạng thái legacy để tương thích.
+
 ## `index.ts`
 - Re-export toàn bộ API từ các module chính: `chips`, `history`, `parser`, `suggestions`, `types`.
 

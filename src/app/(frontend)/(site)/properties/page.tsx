@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { useDispatch, useSelector } from 'react-redux'
 import type { Property } from '@/payload-types'
 import {
   fetchPropertiesByPostType,
@@ -12,6 +14,12 @@ import { PropertiesFilterBar } from './components/PropertiesFilterBar'
 import { PropertiesHeader } from './components/PropertiesHeader'
 import { PropertiesList } from './components/PropertiesList'
 import { PropertiesSidebar } from './components/PropertiesSidebar'
+import { parseSearch } from '../home/lib/search/parser'
+import type { AppDispatch, RootState } from '@/app/store'
+import {
+  selectPropertySearch,
+  setPropertySearchState,
+} from '@/app/store/slices/propertySearchSlice'
 
 type RangeOption = {
   id: string
@@ -84,6 +92,13 @@ const dynamicLabelMap: Record<string, { groupLabel: string; valueLabel: Record<s
 const numberFormatter = new Intl.NumberFormat('vi-VN')
 const tyFormatter = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 })
 
+const parsePositiveNumber = (value: string | null): number | undefined => {
+  if (!value) return undefined
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed) || parsed <= 0) return undefined
+  return parsed
+}
+
 const buildRanges = (
   range: { min: number | null; max: number | null },
   steps: number,
@@ -155,6 +170,9 @@ const buildPriceRanges = (
 }
 
 export default function PropertiesPage() {
+  const searchParams = useSearchParams()
+  const dispatch = useDispatch<AppDispatch>()
+  const sharedSearch = useSelector(selectPropertySearch)
   const [properties, setProperties] = useState<Property[]>([])
   const [totalDocs, setTotalDocs] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -178,6 +196,12 @@ export default function PropertiesPage() {
 
   const [keywordInput, setKeywordInput] = useState('')
   const [sortValue, setSortValue] = useState<PropertySortValue>('default')
+  const [searchDistrict, setSearchDistrict] = useState<number | undefined>(undefined)
+  const [urlOnlyFilters, setUrlOnlyFilters] = useState<{
+    listingTypes?: string[]
+    furnitureStatuses?: string[]
+    postTypes?: string[]
+  }>({})
   const [filters, setFilters] = useState({
     verifiedOnly: false,
     propertyTypes: [] as string[],
@@ -197,6 +221,7 @@ export default function PropertiesPage() {
     bathroomsList: [] as number[],
   })
   const [keyword, setKeyword] = useState('')
+  const [hasAppliedUrlFilters, setHasAppliedUrlFilters] = useState(false)
 
   const requestFilters = useMemo<PropertyFiltersState>(() => {
     const selectedPriceRanges = priceRangeOptions.filter((option) => filters.priceRangeIds.includes(option.id))
@@ -216,6 +241,7 @@ export default function PropertiesPage() {
 
     return {
       keyword: keyword || undefined,
+      district: searchDistrict,
       verifiedOnly: filters.verifiedOnly,
       propertyTypes: filters.propertyTypes,
       provinceCodes: filters.provinceCodes,
@@ -226,12 +252,173 @@ export default function PropertiesPage() {
       maxPrice: Number.isFinite(inputMaxPrice) && inputMaxPrice > 0 ? inputMaxPrice : listMaxPrice,
       minArea: Number.isFinite(inputMinArea) && inputMinArea > 0 ? inputMinArea : listMinArea,
       maxArea: Number.isFinite(inputMaxArea) && inputMaxArea > 0 ? inputMaxArea : listMaxArea,
+      listingTypes: urlOnlyFilters.listingTypes,
+      postTypes: urlOnlyFilters.postTypes,
       directions: filters.directions,
       legalStatuses: filters.legalStatuses,
+      furnitureStatuses: urlOnlyFilters.furnitureStatuses,
       bedroomsList: filters.bedroomsList,
       bathroomsList: filters.bathroomsList,
     }
-  }, [areaRangeOptions, filters, keyword, priceRangeOptions])
+  }, [areaRangeOptions, filters, keyword, priceRangeOptions, searchDistrict, urlOnlyFilters])
+
+  useEffect(() => {
+    if (hasAppliedUrlFilters) return
+
+    const keywordFromUrl = searchParams.get('keyword') || ''
+    const districtFromUrl = searchParams.get('district') || ''
+    const provinceCodeFromUrl = searchParams.get('provinceCode') || ''
+    const wardCodeFromUrl = searchParams.get('wardCode') || ''
+    const listingTypeFromUrl = searchParams.get('listingType') || ''
+    const propertyTypeFromUrl = searchParams.get('propertyType') || ''
+    const directionFromUrl = searchParams.get('direction') || ''
+    const legalStatusFromUrl = searchParams.get('legalStatus') || ''
+    const furnitureStatusFromUrl = searchParams.get('furnitureStatus') || ''
+    const postTypeFromUrl = searchParams.get('postType') || ''
+    const bedroomsFromUrl = parsePositiveNumber(searchParams.get('bedrooms'))
+    const bathroomsFromUrl = parsePositiveNumber(searchParams.get('bathrooms'))
+    const minPriceFromUrl = parsePositiveNumber(searchParams.get('minPrice'))
+    const maxPriceFromUrl = parsePositiveNumber(searchParams.get('maxPrice'))
+    const minAreaFromUrl = parsePositiveNumber(searchParams.get('minArea'))
+    const maxAreaFromUrl = parsePositiveNumber(searchParams.get('maxArea'))
+
+    const hasAnyUrlFilter =
+      !keywordFromUrl &&
+      !districtFromUrl &&
+      !provinceCodeFromUrl &&
+      !wardCodeFromUrl &&
+      !listingTypeFromUrl &&
+      !propertyTypeFromUrl &&
+      !directionFromUrl &&
+      !legalStatusFromUrl &&
+      !furnitureStatusFromUrl &&
+      !postTypeFromUrl &&
+      !bedroomsFromUrl &&
+      !bathroomsFromUrl &&
+      !minPriceFromUrl &&
+      !maxPriceFromUrl &&
+      !minAreaFromUrl &&
+      !maxAreaFromUrl
+
+    if (hasAnyUrlFilter) {
+      setKeywordInput(sharedSearch.homeInput || sharedSearch.keyword || '')
+      setKeyword(sharedSearch.keyword || '')
+      setSearchDistrict(sharedSearch.district)
+      setUrlOnlyFilters({
+        listingTypes: sharedSearch.listingTypes,
+        furnitureStatuses: sharedSearch.furnitureStatuses,
+        postTypes: sharedSearch.postTypes,
+      })
+      setFilters((previous) => ({
+        ...previous,
+        propertyTypes: sharedSearch.propertyTypes,
+        provinceCodes: sharedSearch.provinceCodes,
+        wardCodes: sharedSearch.wardCodes,
+        streets: sharedSearch.streets,
+        projectIds: sharedSearch.projectIds,
+        directions: sharedSearch.directions,
+        legalStatuses: sharedSearch.legalStatuses,
+        bedroomsList: sharedSearch.bedroomsList,
+        bathroomsList: sharedSearch.bathroomsList,
+        minPriceInput: sharedSearch.minPrice ? String(sharedSearch.minPrice) : previous.minPriceInput,
+        maxPriceInput: sharedSearch.maxPrice ? String(sharedSearch.maxPrice) : previous.maxPriceInput,
+        minAreaInput: sharedSearch.minArea ? String(sharedSearch.minArea) : previous.minAreaInput,
+        maxAreaInput: sharedSearch.maxArea ? String(sharedSearch.maxArea) : previous.maxAreaInput,
+        verifiedOnly: sharedSearch.verifiedOnly,
+      }))
+      setHasAppliedUrlFilters(true)
+      return
+    }
+
+    setKeywordInput(keywordFromUrl)
+    setKeyword(keywordFromUrl)
+    setSearchDistrict(parsePositiveNumber(districtFromUrl))
+    setUrlOnlyFilters({
+      listingTypes: listingTypeFromUrl ? [listingTypeFromUrl] : undefined,
+      furnitureStatuses: furnitureStatusFromUrl ? [furnitureStatusFromUrl] : undefined,
+      postTypes: postTypeFromUrl ? [postTypeFromUrl] : undefined,
+    })
+    setFilters((previous) => ({
+      ...previous,
+      propertyTypes: propertyTypeFromUrl ? [propertyTypeFromUrl] : previous.propertyTypes,
+      provinceCodes: provinceCodeFromUrl ? [provinceCodeFromUrl] : previous.provinceCodes,
+      wardCodes: wardCodeFromUrl ? [wardCodeFromUrl] : previous.wardCodes,
+      directions: directionFromUrl ? [directionFromUrl] : previous.directions,
+      legalStatuses: legalStatusFromUrl ? [legalStatusFromUrl] : previous.legalStatuses,
+      bedroomsList: bedroomsFromUrl ? [bedroomsFromUrl] : previous.bedroomsList,
+      bathroomsList: bathroomsFromUrl ? [bathroomsFromUrl] : previous.bathroomsList,
+      minPriceInput: minPriceFromUrl ? String(minPriceFromUrl) : previous.minPriceInput,
+      maxPriceInput: maxPriceFromUrl ? String(maxPriceFromUrl) : previous.maxPriceInput,
+      minAreaInput: minAreaFromUrl ? String(minAreaFromUrl) : previous.minAreaInput,
+      maxAreaInput: maxAreaFromUrl ? String(maxAreaFromUrl) : previous.maxAreaInput,
+    }))
+    setPage(1)
+    dispatch(
+      setPropertySearchState({
+        keyword: keywordFromUrl,
+        district: parsePositiveNumber(districtFromUrl),
+        provinceCodes: provinceCodeFromUrl ? [provinceCodeFromUrl] : [],
+        wardCodes: wardCodeFromUrl ? [wardCodeFromUrl] : [],
+        listingTypes: listingTypeFromUrl ? [listingTypeFromUrl] : [],
+        propertyTypes: propertyTypeFromUrl ? [propertyTypeFromUrl] : [],
+        directions: directionFromUrl ? [directionFromUrl] : [],
+        legalStatuses: legalStatusFromUrl ? [legalStatusFromUrl] : [],
+        furnitureStatuses: furnitureStatusFromUrl ? [furnitureStatusFromUrl] : [],
+        postTypes: postTypeFromUrl ? [postTypeFromUrl] : [],
+        bedroomsList: bedroomsFromUrl ? [bedroomsFromUrl] : [],
+        bathroomsList: bathroomsFromUrl ? [bathroomsFromUrl] : [],
+        minPrice: minPriceFromUrl,
+        maxPrice: maxPriceFromUrl,
+        minArea: minAreaFromUrl,
+        maxArea: maxAreaFromUrl,
+      }),
+    )
+    setHasAppliedUrlFilters(true)
+  }, [dispatch, hasAppliedUrlFilters, searchParams, sharedSearch])
+
+  useEffect(() => {
+    if (!hasAppliedUrlFilters) return
+
+    dispatch(
+      setPropertySearchState({
+        activeTab: 'property',
+        homeInput: keywordInput,
+        keyword: keyword || '',
+        district: searchDistrict,
+        provinceCodes: filters.provinceCodes,
+        wardCodes: filters.wardCodes,
+        streets: filters.streets,
+        projectIds: filters.projectIds,
+        listingTypes: urlOnlyFilters.listingTypes ?? [],
+        propertyTypes: filters.propertyTypes,
+        directions: filters.directions,
+        legalStatuses: filters.legalStatuses,
+        furnitureStatuses: urlOnlyFilters.furnitureStatuses ?? [],
+        postTypes: urlOnlyFilters.postTypes ?? [],
+        bedroomsList: filters.bedroomsList,
+        bathroomsList: filters.bathroomsList,
+        minPrice: requestFilters.minPrice,
+        maxPrice: requestFilters.maxPrice,
+        minArea: requestFilters.minArea,
+        maxArea: requestFilters.maxArea,
+        verifiedOnly: filters.verifiedOnly,
+      }),
+    )
+  }, [
+    dispatch,
+    filters,
+    hasAppliedUrlFilters,
+    keyword,
+    keywordInput,
+    requestFilters.maxArea,
+    requestFilters.maxPrice,
+    requestFilters.minArea,
+    requestFilters.minPrice,
+    searchDistrict,
+    urlOnlyFilters.furnitureStatuses,
+    urlOnlyFilters.listingTypes,
+    urlOnlyFilters.postTypes,
+  ])
 
   useEffect(() => {
     async function loadFilterOptions() {
@@ -327,11 +514,84 @@ export default function PropertiesPage() {
   const handleFiltersChange = (nextFilters: typeof filters) => {
     setFilters(nextFilters)
     setPage(1)
+    dispatch(
+      setPropertySearchState({
+        activeTab: 'property',
+        homeInput: keywordInput,
+        keyword: keyword || '',
+        district: searchDistrict,
+        provinceCodes: nextFilters.provinceCodes,
+        wardCodes: nextFilters.wardCodes,
+        streets: nextFilters.streets,
+        projectIds: nextFilters.projectIds,
+        listingTypes: urlOnlyFilters.listingTypes ?? [],
+        propertyTypes: nextFilters.propertyTypes,
+        directions: nextFilters.directions,
+        legalStatuses: nextFilters.legalStatuses,
+        furnitureStatuses: urlOnlyFilters.furnitureStatuses ?? [],
+        postTypes: urlOnlyFilters.postTypes ?? [],
+        bedroomsList: nextFilters.bedroomsList,
+        bathroomsList: nextFilters.bathroomsList,
+        verifiedOnly: nextFilters.verifiedOnly,
+      }),
+    )
   }
 
   const handleSearch = () => {
-    setKeyword(keywordInput.trim())
+    const parsed = parseSearch(keywordInput, 'property')
+    const nextKeyword = parsed.keyword.trim()
+
+    setSearchDistrict(parsed.filters.district)
+    setUrlOnlyFilters({
+      listingTypes: parsed.filters.listingType ? [parsed.filters.listingType] : [],
+      furnitureStatuses: parsed.filters.furnitureStatus ? [parsed.filters.furnitureStatus] : [],
+      postTypes: parsed.filters.postType ? [parsed.filters.postType] : [],
+    })
+    setFilters((previous) => ({
+      ...previous,
+      propertyTypes: parsed.filters.propertyType ? [parsed.filters.propertyType] : [],
+      provinceCodes: parsed.filters.provinceCode ? [parsed.filters.provinceCode] : [],
+      wardCodes: parsed.filters.wardCode ? [parsed.filters.wardCode] : [],
+      directions: parsed.filters.direction ? [parsed.filters.direction] : [],
+      legalStatuses: parsed.filters.legalStatus ? [parsed.filters.legalStatus] : [],
+      bedroomsList: typeof parsed.filters.bedrooms === 'number' ? [parsed.filters.bedrooms] : [],
+      bathroomsList:
+        typeof parsed.filters.bathrooms === 'number' ? [parsed.filters.bathrooms] : [],
+      minPriceInput:
+        typeof parsed.filters.minPrice === 'number' ? String(parsed.filters.minPrice) : '',
+      maxPriceInput:
+        typeof parsed.filters.maxPrice === 'number' ? String(parsed.filters.maxPrice) : '',
+      minAreaInput: typeof parsed.filters.minArea === 'number' ? String(parsed.filters.minArea) : '',
+      maxAreaInput: typeof parsed.filters.maxArea === 'number' ? String(parsed.filters.maxArea) : '',
+      streets: previous.streets,
+      projectIds: previous.projectIds,
+    }))
+    setKeywordInput(keywordInput)
+    setKeyword(nextKeyword)
     setPage(1)
+    dispatch(
+      setPropertySearchState({
+        activeTab: 'property',
+        homeInput: keywordInput,
+        keyword: nextKeyword,
+        district: parsed.filters.district,
+        provinceCodes: parsed.filters.provinceCode ? [parsed.filters.provinceCode] : [],
+        wardCodes: parsed.filters.wardCode ? [parsed.filters.wardCode] : [],
+        listingTypes: parsed.filters.listingType ? [parsed.filters.listingType] : [],
+        propertyTypes: parsed.filters.propertyType ? [parsed.filters.propertyType] : [],
+        directions: parsed.filters.direction ? [parsed.filters.direction] : [],
+        legalStatuses: parsed.filters.legalStatus ? [parsed.filters.legalStatus] : [],
+        furnitureStatuses: parsed.filters.furnitureStatus ? [parsed.filters.furnitureStatus] : [],
+        postTypes: parsed.filters.postType ? [parsed.filters.postType] : [],
+        bedroomsList: typeof parsed.filters.bedrooms === 'number' ? [parsed.filters.bedrooms] : [],
+        bathroomsList:
+          typeof parsed.filters.bathrooms === 'number' ? [parsed.filters.bathrooms] : [],
+        minPrice: parsed.filters.minPrice,
+        maxPrice: parsed.filters.maxPrice,
+        minArea: parsed.filters.minArea,
+        maxArea: parsed.filters.maxArea,
+      }),
+    )
   }
 
   const pageNumbers = (() => {

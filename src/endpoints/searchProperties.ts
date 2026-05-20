@@ -179,16 +179,6 @@ export const searchProperties: Endpoint = {
           { seoTitle: { like: keyword } },
           { seoDescription: { like: keyword } },
           { seoKeywords: { like: keyword } },
-          { listingType: { like: keyword } },
-          { propertyType: { like: keyword } },
-          { direction: { like: keyword } },
-          { legalStatus: { like: keyword } },
-          { furnitureStatus: { like: keyword } },
-          { postType: { like: keyword } },
-          { label: { like: keyword } },
-          { priceUnit: { like: keyword } },
-          { provinceCode: { like: keyword } },
-          { wardCode: { like: keyword } },
         ],
       })
     }

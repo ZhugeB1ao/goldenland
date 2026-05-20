@@ -144,6 +144,7 @@ export const getHistoryTagStats = (history: SearchHistoryItem[], activeTab: Sear
   // }
 }
 
+// Legacy utility: history-based search suggestion is disabled in active Home flow.
 // Read fresh search history from localStorage.
 export function readSearchHistory(storage = getHistoryStorage()): SearchHistoryItem[] {
   if (!storage) return []
@@ -167,6 +168,7 @@ export function readSearchHistory(storage = getHistoryStorage()): SearchHistoryI
   }
 }
 
+// Legacy utility: history-based search suggestion is disabled in active Home flow.
 // Save a search and update its frequency count.
 export function recordSearchHistory(
   input: string,

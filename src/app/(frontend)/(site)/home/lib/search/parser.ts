@@ -16,7 +16,11 @@ import {
   parsePrice,
   parsePropertyType,
 } from './parserUtils'
-import { getProvinceLabelByCode, parseProvinceFromNormalizedText } from './provinceCatalog'
+import {
+  getProvinceLabelByCode,
+  parseProvinceFromNormalizedText,
+  parseWardFromNormalizedText,
+} from './provinceCatalog'
 
 // Parse free text into keyword, structured filters, and UI chips.
 export function parseSearch(input: string, tab: SearchTab): ParsedSearchResult {
@@ -34,6 +38,13 @@ export function parseSearch(input: string, tab: SearchTab): ParsedSearchResult {
   const matchedProvince = parseProvinceFromNormalizedText(normalized)
   if (matchedProvince) {
     filters.provinceCode = matchedProvince.code
+  }
+  const matchedWard = parseWardFromNormalizedText(normalized, matchedProvince?.code)
+  if (matchedWard) {
+    filters.wardCode = matchedWard.code
+    if (!filters.provinceCode) {
+      filters.provinceCode = matchedWard.provinceCode
+    }
   }
 
   if (tab === 'property' || tab === 'all') {
@@ -82,7 +93,12 @@ export function parseSearch(input: string, tab: SearchTab): ParsedSearchResult {
   if (matchedProvince) {
     keywordInput = removeAliasTokens(keywordInput, matchedProvince.aliases)
   }
-  const keyword = buildKeyword(keywordInput, tab)
+  if (matchedWard) {
+    keywordInput = removeAliasTokens(keywordInput, matchedWard.aliases)
+  }
+  // Build keyword from normalized text so Vietnamese combining accents do not leave stray tokens.
+  const rawKeyword = buildKeyword(normalize(keywordInput), tab)
+  const keyword = normalize(rawKeyword).length >= 2 ? rawKeyword : ''
   const chips: SearchChip[] = []
 
   if (filters.district) {
@@ -104,6 +120,15 @@ export function parseSearch(input: string, tab: SearchTab): ParsedSearchResult {
         editText: provinceLabel.toLowerCase(),
       })
     }
+  }
+
+  if (filters.wardCode && matchedWard) {
+    chips.push({
+      key: 'ward',
+      label: matchedWard.label,
+      value: matchedWard.code,
+      editText: matchedWard.label.toLowerCase(),
+    })
   }
 
   if (filters.bedrooms) {
