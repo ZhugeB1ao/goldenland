@@ -31,6 +31,8 @@ import { Settings } from './app/globals/Settings'
 import { divisionEndpoints } from './endpoints/divisions'
 import { purchasePackage } from './endpoints/purchasePackage'
 import { topUp } from './endpoints/topUp'
+import { payosWebhook } from './endpoints/payosWebhook'
+import { topUpStatus } from './endpoints/topUpStatus'
 import { searchProperties } from './endpoints/searchProperties'
 import { propertyFilters } from './endpoints/propertyFilters'
 import { searchProjects } from './endpoints/searchProjects'
@@ -67,6 +69,8 @@ export default buildConfig({
     ...divisionEndpoints,
     purchasePackage,
     topUp,
+    payosWebhook,
+    topUpStatus,
     searchProperties,
     propertyFilters,
     searchProjects,

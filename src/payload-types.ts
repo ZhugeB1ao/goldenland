@@ -779,6 +779,10 @@ export interface Order {
    * Tự sinh khi tạo order
    */
   orderCode: string;
+  /**
+   * Ma don hang dang so gui sang cong thanh toan
+   */
+  providerOrderCode?: number | null;
   user: number | User;
   orderType: 'package' | 'single_post' | 'top_up';
   package?: (number | null) | Package;
@@ -1357,6 +1361,7 @@ export interface VouchersSelect<T extends boolean = true> {
  */
 export interface OrdersSelect<T extends boolean = true> {
   orderCode?: T;
+  providerOrderCode?: T;
   user?: T;
   orderType?: T;
   package?: T;

@@ -23,6 +23,15 @@ export const Orders: CollectionConfig = {
             admin: { readOnly: true, description: 'Tự sinh khi tạo order' },
         },
         {
+            name: 'providerOrderCode',
+            type: 'number',
+            unique: true,
+            admin: {
+                readOnly: true,
+                description: 'Ma don hang dang so gui sang cong thanh toan',
+            },
+        },
+        {
             name: 'user',
             type: 'relationship',
             relationTo: 'users',

@@ -28,11 +28,11 @@ export default function PurchaseModal({
   // Tự động gọi API lấy thông tin user khi mở Modal
   useEffect(() => {
     if (isOpen) {
-      fetch('/api/users/me')
+      fetch('/api/my/dashboard')
         .then((res) => res.json())
         .then((data) => {
-          if (data && data.user && typeof data.user.balance === 'number') {
-            setUserBalance(data.user.balance)
+          if (data && typeof data.balance === 'number') {
+            setUserBalance(data.balance)
           }
         })
         .catch((err) => console.error('Lỗi lấy thông tin user:', err))
