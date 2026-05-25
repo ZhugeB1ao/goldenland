@@ -385,7 +385,7 @@ export const getTagSearchText = (tag: SearchTagDefinition): string => {
 
 // Check whether a tag belongs to the active search tab.
 export const tabMatches = (candidate: SearchTab, activeTab: SearchTab): boolean => {
-  return activeTab === 'all' || candidate === activeTab || candidate === 'all'
+  return candidate === activeTab
 }
 
 // Find catalog tags that should become structured filters.

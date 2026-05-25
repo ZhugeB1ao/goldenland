@@ -1,4 +1,4 @@
-export type SearchTab = 'all' | 'property' | 'project' | 'news'
+export type SearchTab = 'property' | 'project' | 'news'
 
 export type SearchChipKey =
   | 'district'
@@ -42,10 +42,8 @@ export type ParsedSearchFilters = {
 }
 
 export type ParsedSearchResult = {
-  tab: SearchTab
   keyword: string
   filters: ParsedSearchFilters
-  chips: SearchChip[]
 }
 
 export type SearchHistoryItem = {

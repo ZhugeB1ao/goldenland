@@ -1,4 +1,4 @@
-import type { ParsedSearchFilters, SearchTab } from './types'
+import type { ParsedSearchFilters } from './types'
 import {
   AREA_RANGE_PARSE_RE,
   AREA_RANGE_REMOVE_RE,
@@ -181,7 +181,7 @@ export const parsePostType = (normalizedInput: string): ParsedSearchFilters['pos
 }
 
 // Remove structured tokens so the remaining text can be used as keyword.
-export const buildKeyword = (input: string, tab: SearchTab): string => {
+export const buildKeyword = (input: string): string => {
   return compactWhitespace(
     input
       .replace(DISTRICT_REMOVE_RE, ' ')

@@ -109,8 +109,6 @@ export async function searchNewsByParsed(
 ): Promise<HybridSearchGroup<Article>> {
   const query = buildQuery({
     keyword: parsed.keyword || undefined,
-    district: parsed.filters.district || undefined,
-    provinceCode: parsed.filters.provinceCode || undefined,
     page: options?.page ?? 1,
     limit: options?.limit ?? DEFAULT_LIMIT,
     sort: '-publishedAt',
@@ -127,32 +125,33 @@ export async function searchNewsByParsed(
 // Run the correct search group for the active tab.
 // Legacy path for Home: active flow now routes directly by tab instead of running hybrid blocks on Home.
 export async function runHybridSearch(
+  tab: SearchTab,
   parsed: ParsedSearchResult,
   options?: SearchOptions,
 ): Promise<HybridSearchResult> {
   const baseResult: HybridSearchResult = {
-    tab: parsed.tab,
+    tab,
     parsed,
     property: emptyGroup<Property>(),
     project: emptyGroup<Project>(),
     news: emptyGroup<Article>(),
   }
 
-  if (parsed.tab === 'property') {
+  if (tab === 'property') {
     return {
       ...baseResult,
       property: await searchPropertiesByParsed(parsed, options),
     }
   }
 
-  if (parsed.tab === 'project') {
+  if (tab === 'project') {
     return {
       ...baseResult,
       project: await searchProjectsByParsed(parsed, options),
     }
   }
 
-  if (parsed.tab === 'news') {
+  if (tab === 'news') {
     return {
       ...baseResult,
       news: await searchNewsByParsed(parsed, options),
