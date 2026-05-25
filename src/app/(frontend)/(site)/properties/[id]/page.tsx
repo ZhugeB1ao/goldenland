@@ -6,11 +6,12 @@ import { notFound } from 'next/navigation'
 import { Breadcrumb, HeaderActions, LocationLine, PropertyStats } from './components/DetailHeader'
 import { PropertyGallery } from './components/PropertyGallery'
 import {
-  DescriptionSection,
-  FeaturesSection,
-  MapSection,
-  MetaInfo,
-  ProjectSection,
+    DescriptionSection,
+    FeaturesSection,
+    MapSection,
+    MapSectionFallback,
+    MetaInfo,
+    ProjectSection,
   type FeatureItem,
   type MetaItem,
 } from './components/DetailSections'
@@ -308,7 +309,16 @@ export default async function PropertyDetailPage({ params }: PageProps) {
         <div className="lg:col-span-2 space-y-12">
           <DescriptionSection description={property.description} />
           <FeaturesSection items={featureItems} />
-          <MapSection locationText={locationText} />
+          {typeof property.latitude === 'number' && typeof property.longitude === 'number' ? (
+            <MapSection
+              locationText={locationText}
+              lat={property.latitude}
+              lng={property.longitude}
+              label={property.title}
+            />
+          ) : (
+            <MapSectionFallback locationText={locationText} />
+          )}
           <MetaInfo items={metaItems} />
           <ForYouSection properties={forYouProperties} />
           {project && <ProjectSection title={projectTitle} items={projectItems} />}

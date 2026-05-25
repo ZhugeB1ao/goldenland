@@ -1,3 +1,5 @@
+import PropertyLocationMap from './PropertyLocationMap'
+
 export type FeatureItem = {
   label: string
   value: string
@@ -51,20 +53,41 @@ export function FeaturesSection({ items }: { items: FeatureItem[] }) {
   )
 }
 
-export function MapSection({ locationText }: { locationText: string }) {
+export function MapSection({
+  locationText,
+  lat,
+  lng,
+  label,
+}: {
+  locationText: string
+  lat: number
+  lng: number
+  label: string
+}) {
   return (
     <section>
       <h2 className="text-2xl font-headline font-semibold tracking-tight text-on-background mb-6">
         Bản đồ
       </h2>
-      <div className="h-80 bg-surface-container rounded-xl overflow-hidden shadow-[0px_4px_24px_rgba(27,28,28,0.02)] border border-outline-variant/15 relative">
-        <div
-          className="absolute inset-0 flex items-center justify-center bg-surface-container-low text-on-surface-variant font-medium"
-          data-location={locationText}
-        >
-          Map Embed Placeholder: {locationText}
-        </div>
+      <PropertyLocationMap lat={lat} lng={lng} label={label} />
+      <p className="mt-3 text-sm text-on-secondary-container" data-location={locationText}>
+        Vị trí hiển thị mang tính tham khảo theo đường/dự án.
+      </p>
+      <p className="text-sm text-on-secondary-container">{locationText}</p>
+    </section>
+  )
+}
+
+export function MapSectionFallback({ locationText }: { locationText: string }) {
+  return (
+    <section>
+      <h2 className="text-2xl font-headline font-semibold tracking-tight text-on-background mb-6">
+        Bản đồ
+      </h2>
+      <div className="h-80 bg-surface-container-low rounded-xl overflow-hidden shadow-[0px_4px_24px_rgba(27,28,28,0.02)] border border-outline-variant/15 relative flex items-center justify-center text-on-surface-variant">
+        Chưa có tọa độ để hiển thị bản đồ
       </div>
+      <p className="mt-3 text-sm text-on-secondary-container">{locationText}</p>
     </section>
   )
 }
