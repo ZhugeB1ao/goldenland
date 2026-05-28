@@ -281,8 +281,6 @@ async function seed() {
       propertyType = getRandomItem(projectTypes)
     }
 
-    const listingType = 'sale'
-    
     const price = getRandomInt(1, 20) * 1000000000
     const priceUnit = 'total' as const
 
@@ -329,7 +327,6 @@ async function seed() {
         data: {
           title: realisticTitle,
           description,
-          listingType,
           propertyType,
           price,
           priceUnit,

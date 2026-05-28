@@ -11,7 +11,6 @@ import {
   parseDistrict,
   parseFurnitureStatus,
   parseLegalStatus,
-  parseListingType,
   parsePostType,
   parsePrice,
   parsePropertyType,
@@ -48,9 +47,6 @@ export function parseSearch(input: string, tab: SearchTab): ParsedSearchResult {
   }
 
   if (tab === 'property' || tab === 'all') {
-    const listingType = parseListingType(normalized)
-    if (listingType) filters.listingType = listingType
-
     const propertyType = parsePropertyType(normalized)
     if (propertyType) filters.propertyType = propertyType
 
@@ -180,12 +176,6 @@ export function parseSearch(input: string, tab: SearchTab): ParsedSearchResult {
   }
 
   const filterChipLabels: Partial<Record<SearchChipKey, string>> = {
-    listingType:
-      filters.listingType === 'rent'
-        ? 'Cho thuê'
-        : filters.listingType === 'sale'
-          ? 'Bán'
-          : undefined,
     propertyType: PROPERTY_ATTRIBUTE_TAGS.find(
       (tag) => tag.filter?.propertyType === filters.propertyType,
     )?.label,
@@ -202,7 +192,6 @@ export function parseSearch(input: string, tab: SearchTab): ParsedSearchResult {
 
   ;(
     [
-      ['listingType', filters.listingType],
       ['propertyType', filters.propertyType],
       ['direction', filters.direction],
       ['legalStatus', filters.legalStatus],

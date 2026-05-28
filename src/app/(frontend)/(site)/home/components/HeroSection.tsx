@@ -71,7 +71,6 @@ export function HeroSection() {
         district: parsed.filters.district || undefined,
         provinceCode: parsed.filters.provinceCode || undefined,
         wardCode: parsed.filters.wardCode || undefined,
-        listingType: parsed.filters.listingType || undefined,
         propertyType: parsed.filters.propertyType || undefined,
         bedrooms: parsed.filters.bedrooms || undefined,
         bathrooms: parsed.filters.bathrooms || undefined,

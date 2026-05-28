@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { formatPrice, formatDate, lexicalToHtml, PROPERTY_TYPES } from '../utils'
+import { formatLocationByCodes } from '../../properties/lib/utils'
 import SectionTitle from '../components/SectionTitle'
 import ProjectCard from '../components/ProjectCard'
 
@@ -94,6 +95,11 @@ export default function ProjectDetailPage() {
 
     const badge = project.saleStatus ? STATUS_MAP[project.saleStatus] : null
     const youtubeId = getYoutubeId(project.videoUrl)
+    const locationText = formatLocationByCodes({
+        provinceCode: project.provinceCode,
+        wardCode: project.wardCode,
+        street: project.street,
+    })
 
     return (
         <div className="bg-gray-50 min-h-screen text-gray-900 pb-24">
@@ -161,11 +167,9 @@ export default function ProjectDetailPage() {
                     </div>
                 )}
 
-                {project.address && (
-                    <div className="text-gray-500 text-[15px] mb-5 flex items-center gap-1">
-                        📍 {project.address}
-                    </div>
-                )}
+                <div className="text-gray-500 text-[15px] mb-5 flex items-center gap-1">
+                    📍 {locationText}
+                </div>
 
                 {/* PRICE BOX */}
                 <div className="bg-white rounded-xl shadow-sm p-5 mb-8 grid grid-cols-3 gap-5">

@@ -8,7 +8,6 @@ export type SearchChipKey =
   | 'bathrooms'
   | 'price'
   | 'area'
-  | 'listingType'
   | 'propertyType'
   | 'direction'
   | 'legalStatus'
@@ -33,7 +32,6 @@ export type ParsedSearchFilters = {
   maxPrice?: number
   minArea?: number
   maxArea?: number
-  listingType?: string
   propertyType?: string
   direction?: string
   legalStatus?: string

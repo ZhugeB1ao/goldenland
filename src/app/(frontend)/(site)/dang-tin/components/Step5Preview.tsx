@@ -1,6 +1,7 @@
 'use client'
 
 import type { FormData } from '../page'
+import { formatLocationByCodes } from '../../properties/lib/utils'
 
 type Props = {
   data: FormData
@@ -9,7 +10,6 @@ type Props = {
   onSubmit: () => void
 }
 
-const LISTING_TYPE_LABELS: Record<string, string> = { sale: 'Bán', rent: 'Cho thuê' }
 const PROPERTY_TYPE_LABELS: Record<string, string> = {
   house: 'Nhà riêng', apartment: 'Căn hộ', land: 'Đất', villa: 'Biệt thự',
   townhouse: 'Nhà phố', shophouse: 'Shophouse', penthouse: 'Penthouse',
@@ -49,6 +49,13 @@ function Row({ label, value }: { label: string; value?: string | number | null }
 }
 
 export default function Step5Preview({ data, submitting, error, onSubmit }: Props) {
+  const fallbackLocation = formatLocationByCodes({
+    provinceCode: data.provinceCode,
+    wardCode: data.wardCode,
+    street: data.street,
+  })
+  const publicLocation = data.address.trim() || fallbackLocation
+
   return (
     <div className="space-y-6">
       {data.images.length > 0 && (
@@ -71,12 +78,12 @@ export default function Step5Preview({ data, submitting, error, onSubmit }: Prop
             </span>
           )}
         </p>
-        {data.address && <p className="text-sm text-gray-500 mt-0.5">📍 {data.address}</p>}
+        <p className="text-sm text-gray-500 mt-0.5">📍 {publicLocation}</p>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100 p-4">
         <h4 className="text-sm font-semibold text-gray-700 mb-2">Thông tin chi tiết</h4>
-        <Row label="Loại giao dịch" value={LISTING_TYPE_LABELS[data.listingType]} />
+        <Row label="Loại giao dịch" value="Bán" />
         <Row label="Loại BĐS" value={PROPERTY_TYPE_LABELS[data.propertyType]} />
         <Row label="Diện tích" value={data.area ? `${data.area} m²` : null} />
         <Row label="Phòng ngủ" value={data.bedrooms ? `${data.bedrooms} phòng` : null} />

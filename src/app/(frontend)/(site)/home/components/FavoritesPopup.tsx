@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import type { Property } from '@/payload-types'
-import divisions from '@/app/data/vietnam-divisions.json'
 import { fetchPropertiesByIds } from '../services/properties'
 import type { AppDispatch, RootState } from '@/app/store'
 import { selectFavoriteIds, toggleFavoriteThunk } from '@/app/store/slices/favoritesSlice'
+import { formatLocation } from '../../properties/lib/utils'
 
 const FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1400&q=80'
@@ -18,45 +18,6 @@ type FavoriteItem = {
   area: string
   location: string
   image: string
-}
-
-type DivisionProvince = {
-  Code: string
-  FullName: string
-  Wards: Array<{
-    Code: string
-    FullName: string
-    ProvinceCode: string
-  }>
-}
-
-const divisionData = divisions as DivisionProvince[]
-
-const normalizeCode = (value: unknown): string => {
-  if (value === null || value === undefined) return ''
-
-  const raw = String(value).trim()
-  if (!raw) return ''
-
-  const trimmed = raw.replace(/^0+/, '')
-  return trimmed || '0'
-}
-
-const provinceNameByCode = new Map<string, string>()
-const wardNameByProvinceAndCode = new Map<string, string>()
-
-for (const province of divisionData) {
-  const provinceKey = normalizeCode(province.Code)
-  if (!provinceKey) continue
-
-  provinceNameByCode.set(provinceKey, province.FullName)
-
-  for (const ward of province.Wards) {
-    const wardKey = normalizeCode(ward.Code)
-    if (!wardKey) continue
-
-    wardNameByProvinceAndCode.set(`${provinceKey}:${wardKey}`, ward.FullName)
-  }
 }
 
 const formatPrice = (property: Property): string => {
@@ -87,19 +48,6 @@ const formatPrice = (property: Property): string => {
   }
 
   return amountStr
-}
-
-const formatLocation = (property: Property): string => {
-  const provinceKey = normalizeCode(property.provinceCode)
-  const wardKey = normalizeCode(property.wardCode)
-
-  const provinceName = provinceKey ? provinceNameByCode.get(provinceKey) : undefined
-  const wardName =
-    provinceKey && wardKey ? wardNameByProvinceAndCode.get(`${provinceKey}:${wardKey}`) : undefined
-
-  const mappedLocation = [wardName, provinceName].filter(Boolean).join(', ')
-
-  return mappedLocation || 'Đang cập nhật'
 }
 
 export default function FavoritesPopup() {

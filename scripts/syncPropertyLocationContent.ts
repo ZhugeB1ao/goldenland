@@ -94,7 +94,7 @@ const getLocationText = (property: Property): string => {
 }
 
 const buildTitle = (property: Property, projectName: string | null): string => {
-  const action = property.listingType === 'rent' ? 'Cho thuê' : 'Bán'
+  const action = 'Bán'
   const typeLabel = PROPERTY_TYPE_LABELS[property.propertyType] || 'bất động sản'
   const bedroomText =
     typeof property.bedrooms === 'number' && property.bedrooms > 0 ? ` ${property.bedrooms}PN` : ''
@@ -106,7 +106,7 @@ const buildTitle = (property: Property, projectName: string | null): string => {
 
 const buildDescription = (property: Property, projectName: string | null): string => {
   const typeLabel = PROPERTY_TYPE_LABELS[property.propertyType] || 'bất động sản'
-  const action = property.listingType === 'rent' ? 'cho thuê' : 'cần bán'
+  const action = 'cần bán'
   const locationText = getLocationText(property)
   const projectText = projectName ? ` thuộc dự án ${projectName}` : ''
   const facts = [
@@ -168,7 +168,6 @@ async function fetchAllProperties(payload: Awaited<ReturnType<typeof getPayload>
         title: true,
         slug: true,
         description: true,
-        listingType: true,
         propertyType: true,
         area: true,
         bedrooms: true,
@@ -213,7 +212,7 @@ async function run() {
     const nextSeoTitle = truncate(nextTitle, 70)
     const nextSeoDescription = truncate(nextDescription, 160)
     const nextSeoKeywords = [
-      property.listingType === 'rent' ? 'cho thuê bất động sản' : 'bán bất động sản',
+      'bán bất động sản',
       PROPERTY_TYPE_LABELS[property.propertyType] || property.propertyType,
       projectName,
       property.address,

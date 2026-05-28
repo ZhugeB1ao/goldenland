@@ -198,7 +198,6 @@ export default function PropertiesPage() {
   const [sortValue, setSortValue] = useState<PropertySortValue>('default')
   const [searchDistrict, setSearchDistrict] = useState<number | undefined>(undefined)
   const [urlOnlyFilters, setUrlOnlyFilters] = useState<{
-    listingTypes?: string[]
     furnitureStatuses?: string[]
     postTypes?: string[]
   }>({})
@@ -252,7 +251,6 @@ export default function PropertiesPage() {
       maxPrice: Number.isFinite(inputMaxPrice) && inputMaxPrice > 0 ? inputMaxPrice : listMaxPrice,
       minArea: Number.isFinite(inputMinArea) && inputMinArea > 0 ? inputMinArea : listMinArea,
       maxArea: Number.isFinite(inputMaxArea) && inputMaxArea > 0 ? inputMaxArea : listMaxArea,
-      listingTypes: urlOnlyFilters.listingTypes,
       postTypes: urlOnlyFilters.postTypes,
       directions: filters.directions,
       legalStatuses: filters.legalStatuses,
@@ -269,7 +267,6 @@ export default function PropertiesPage() {
     const districtFromUrl = searchParams.get('district') || ''
     const provinceCodeFromUrl = searchParams.get('provinceCode') || ''
     const wardCodeFromUrl = searchParams.get('wardCode') || ''
-    const listingTypeFromUrl = searchParams.get('listingType') || ''
     const propertyTypeFromUrl = searchParams.get('propertyType') || ''
     const directionFromUrl = searchParams.get('direction') || ''
     const legalStatusFromUrl = searchParams.get('legalStatus') || ''
@@ -287,7 +284,6 @@ export default function PropertiesPage() {
       !districtFromUrl &&
       !provinceCodeFromUrl &&
       !wardCodeFromUrl &&
-      !listingTypeFromUrl &&
       !propertyTypeFromUrl &&
       !directionFromUrl &&
       !legalStatusFromUrl &&
@@ -305,7 +301,6 @@ export default function PropertiesPage() {
       setKeyword(sharedSearch.keyword || '')
       setSearchDistrict(sharedSearch.district)
       setUrlOnlyFilters({
-        listingTypes: sharedSearch.listingTypes,
         furnitureStatuses: sharedSearch.furnitureStatuses,
         postTypes: sharedSearch.postTypes,
       })
@@ -334,7 +329,6 @@ export default function PropertiesPage() {
     setKeyword(keywordFromUrl)
     setSearchDistrict(parsePositiveNumber(districtFromUrl))
     setUrlOnlyFilters({
-      listingTypes: listingTypeFromUrl ? [listingTypeFromUrl] : undefined,
       furnitureStatuses: furnitureStatusFromUrl ? [furnitureStatusFromUrl] : undefined,
       postTypes: postTypeFromUrl ? [postTypeFromUrl] : undefined,
     })
@@ -359,7 +353,6 @@ export default function PropertiesPage() {
         district: parsePositiveNumber(districtFromUrl),
         provinceCodes: provinceCodeFromUrl ? [provinceCodeFromUrl] : [],
         wardCodes: wardCodeFromUrl ? [wardCodeFromUrl] : [],
-        listingTypes: listingTypeFromUrl ? [listingTypeFromUrl] : [],
         propertyTypes: propertyTypeFromUrl ? [propertyTypeFromUrl] : [],
         directions: directionFromUrl ? [directionFromUrl] : [],
         legalStatuses: legalStatusFromUrl ? [legalStatusFromUrl] : [],
@@ -389,7 +382,6 @@ export default function PropertiesPage() {
         wardCodes: filters.wardCodes,
         streets: filters.streets,
         projectIds: filters.projectIds,
-        listingTypes: urlOnlyFilters.listingTypes ?? [],
         propertyTypes: filters.propertyTypes,
         directions: filters.directions,
         legalStatuses: filters.legalStatuses,
@@ -416,7 +408,6 @@ export default function PropertiesPage() {
     requestFilters.minPrice,
     searchDistrict,
     urlOnlyFilters.furnitureStatuses,
-    urlOnlyFilters.listingTypes,
     urlOnlyFilters.postTypes,
   ])
 
@@ -524,7 +515,6 @@ export default function PropertiesPage() {
         wardCodes: nextFilters.wardCodes,
         streets: nextFilters.streets,
         projectIds: nextFilters.projectIds,
-        listingTypes: urlOnlyFilters.listingTypes ?? [],
         propertyTypes: nextFilters.propertyTypes,
         directions: nextFilters.directions,
         legalStatuses: nextFilters.legalStatuses,
@@ -543,7 +533,6 @@ export default function PropertiesPage() {
 
     setSearchDistrict(parsed.filters.district)
     setUrlOnlyFilters({
-      listingTypes: parsed.filters.listingType ? [parsed.filters.listingType] : [],
       furnitureStatuses: parsed.filters.furnitureStatus ? [parsed.filters.furnitureStatus] : [],
       postTypes: parsed.filters.postType ? [parsed.filters.postType] : [],
     })
@@ -577,7 +566,6 @@ export default function PropertiesPage() {
         district: parsed.filters.district,
         provinceCodes: parsed.filters.provinceCode ? [parsed.filters.provinceCode] : [],
         wardCodes: parsed.filters.wardCode ? [parsed.filters.wardCode] : [],
-        listingTypes: parsed.filters.listingType ? [parsed.filters.listingType] : [],
         propertyTypes: parsed.filters.propertyType ? [parsed.filters.propertyType] : [],
         directions: parsed.filters.direction ? [parsed.filters.direction] : [],
         legalStatuses: parsed.filters.legalStatus ? [parsed.filters.legalStatus] : [],

@@ -19,12 +19,13 @@ describe('hybridSearch parsing', () => {
     expect(result.filters.maxPrice).toBe(2_000_000_000)
   })
 
-  it('removes listing type token from input', () => {
-    const result = parseSearch('Bán nhà phố', 'property')
-    const chip = result.chips.find((item) => item.key === 'listingType')
+  it('removes property type token from input', () => {
+    const result = parseSearch('Nhà phố quận 7', 'property')
+    const chip = result.chips.find((item) => item.key === 'propertyType')
     expect(chip).toBeDefined()
-    const cleared = removeSearchTokenByChip('Bán nhà phố', chip!)
-    expect(cleared).toBe('nhà phố')
+    const cleared = removeSearchTokenByChip('Nhà phố quận 7', chip!)
+    expect(cleared).toContain('quận 7')
+    expect(cleared.toLowerCase()).not.toContain('nhà phố')
   })
 
   it('strips numeric filters from news keyword', () => {

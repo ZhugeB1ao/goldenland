@@ -11,7 +11,7 @@ Thư mục `home/lib/search` cung cấp bộ xử lý tìm kiếm tự nhiên (f
 ## `parser.ts`
 - `parseSearch(input, tab)`: parse câu tìm kiếm thành:
   - `keyword` (từ khóa còn lại sau khi bỏ token filter),
-  - `filters` (district, bedrooms, bathrooms, price, area, listingType, ...),
+  - `filters` (district, bedrooms, bathrooms, price, area, propertyType, ...),
   - `chips` để hiển thị UI.
 - `getSearchPlaceholder(tab)`: trả placeholder theo tab (`property`, `project`, `news`, `all`).
 - `suggestMissingFilters(parsed, tab)`: gợi ý các filter còn thiếu (ví dụ `quận 7`, `2 phòng ngủ`, `2 tỷ`).
@@ -93,7 +93,7 @@ Thư mục `home/lib/search` cung cấp bộ xử lý tìm kiếm tự nhiên (f
 - `parseSearch` gọi theo thứ tự chính:
   - `compactWhitespace` + `normalize` (chuẩn hóa input).
   - `parseDistrict`, `parseProvinceFromNormalizedText`.
-  - (tab `property/all`) gọi thêm `parseListingType`, `parsePropertyType`, `parseDirection`, `parseLegalStatus`, `parseFurnitureStatus`, `parsePostType`, `parseBedrooms`, `parseBathrooms`, `parseArea`, `parsePrice`.
+  - (tab `property/all`) gọi thêm `parsePropertyType`, `parseDirection`, `parseLegalStatus`, `parseFurnitureStatus`, `parsePostType`, `parseBedrooms`, `parseBathrooms`, `parseArea`, `parsePrice`.
   - `getMatchedFilterTags(rawInput, tab)` để map alias/tag -> filter.
   - `removeMatchedFilterTagText` + `removeAliasTokens` (xóa token đã nhận diện).
   - `buildKeyword(...)` để lấy keyword sạch.

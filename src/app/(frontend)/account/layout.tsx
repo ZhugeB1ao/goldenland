@@ -1,5 +1,5 @@
 import React from 'react'
-import SideBar from './components/SideBar'
+import AccountShell from './components/AccountShell'
 
 export const metadata = {
   title: 'Tài khoản của tôi - Golden Land',
@@ -9,10 +9,5 @@ export const metadata = {
 export default async function AccountLayout(props: { children: React.ReactNode }) {
   const { children } = props
 
-  return (
-    <div className="flex min-h-screen">
-      <SideBar />
-      <main className="flex-1 p-4">{children}</main>
-    </div>
-  )
+  return <AccountShell>{children}</AccountShell>
 }

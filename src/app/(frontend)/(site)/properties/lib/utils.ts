@@ -62,21 +62,41 @@ export function formatPrice(property: Property): string {
   return amountStr
 }
 
-export function formatLocation(property: Property): string {
-  const provinceKey = normalizeCode(property.provinceCode)
-  const wardKey = normalizeCode(property.wardCode)
+export function getProvinceNameByCode(code: unknown): string | undefined {
+  const provinceKey = normalizeCode(code)
+  if (!provinceKey) return undefined
+  return provinceNameByCode.get(provinceKey)
+}
 
-  const provinceName = provinceKey ? provinceNameByCode.get(provinceKey) : undefined
-  const wardName = provinceKey && wardKey ? wardNameByProvinceAndCode.get(`${provinceKey}:${wardKey}`) : undefined
+export function getWardNameByCodes(provinceCode: unknown, wardCode: unknown): string | undefined {
+  const provinceKey = normalizeCode(provinceCode)
+  const wardKey = normalizeCode(wardCode)
+  if (!provinceKey || !wardKey) return undefined
+  return wardNameByProvinceAndCode.get(`${provinceKey}:${wardKey}`)
+}
 
-  const mappedLocation = [wardName, provinceName].filter(Boolean).join(', ')
-
+export function formatLocationByCodes(params: {
+  provinceCode?: unknown
+  wardCode?: unknown
+  street?: string | null
+}): string {
+  const provinceName = getProvinceNameByCode(params.provinceCode)
+  const wardName = getWardNameByCodes(params.provinceCode, params.wardCode)
+  const street = params.street?.trim()
+  const mappedLocation = [street, wardName, provinceName].filter(Boolean).join(', ')
   return mappedLocation || 'Đang cập nhật'
 }
 
+export function formatLocation(property: Property): string {
+  return formatLocationByCodes({
+    provinceCode: property.provinceCode,
+    wardCode: property.wardCode,
+    street: property.street,
+  })
+}
+
 export function formatProvince(property: Property): string {
-  const provinceKey = normalizeCode(property.provinceCode)
-  const provinceName = provinceKey ? provinceNameByCode.get(provinceKey) : undefined
+  const provinceName = getProvinceNameByCode(property.provinceCode)
   return provinceName || 'Đang cập nhật'
 }
 

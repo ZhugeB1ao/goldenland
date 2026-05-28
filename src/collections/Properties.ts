@@ -47,7 +47,7 @@ export const Properties: CollectionConfig = {
     slug: 'properties',
     admin: {
         useAsTitle: 'title',
-        defaultColumns: ['title', 'listingType', 'price', 'status', 'createdAt'],
+        defaultColumns: ['title', 'price', 'status', 'createdAt'],
     },
     access: {
         create: authenticated,
@@ -86,26 +86,12 @@ export const Properties: CollectionConfig = {
                             required: true,
                         },
                         {
-                            type: 'row', // 2 field trên 1 hàng
-                            fields: [
-                                {
-                                    name: 'listingType',
-                                    type: 'select',
-                                    required: true,
-                                    options: [
-                                        { label: 'Bán', value: 'sale' },
-                                        { label: 'Cho thuê', value: 'rent' },
-                                    ],
-                                },
-                                {
-                                    name: 'postType',
-                                    type: 'select',
-                                    defaultValue: 'normal',
-                                    options: [
-                                        { label: 'Thường', value: 'normal' },
-                                        { label: 'VIP', value: 'vip' },
-                                    ],
-                                },
+                            name: 'postType',
+                            type: 'select',
+                            defaultValue: 'normal',
+                            options: [
+                                { label: 'Thường', value: 'normal' },
+                                { label: 'VIP', value: 'vip' },
                             ],
                         },
                         {

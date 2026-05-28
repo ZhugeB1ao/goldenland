@@ -107,6 +107,3 @@ const reportReasonLabels: Record<string, string> = {
 
 export const reportReasonLabel = (k?: string | null) =>
   (k && reportReasonLabels[k]) || k || '-'
-
-export const listingTypeLabel = (k?: string | null) =>
-  k === 'sale' ? 'Bán' : k === 'rent' ? 'Cho thuê' : k || '-'

@@ -16,8 +16,6 @@ import {
   FURNITURE_STATUS_REMOVE_RE,
   LEGAL_STATUS_PARSE_RE,
   LEGAL_STATUS_REMOVE_RE,
-  LISTING_TYPE_PARSE_RE,
-  LISTING_TYPE_REMOVE_RE,
   POST_TYPE_PARSE_RE,
   POST_TYPE_REMOVE_RE,
   PRICE_RANGE_PARSE_RE,
@@ -118,13 +116,6 @@ export const parsePrice = (
   }
 }
 
-export const parseListingType = (normalizedInput: string): ParsedSearchFilters['listingType'] => {
-  const match = normalizedInput.match(LISTING_TYPE_PARSE_RE)?.[0] ?? ''
-  if (/cho\s*thue|thue/u.test(match)) return 'rent'
-  if (/ban|mua\s*ban/u.test(match)) return 'sale'
-  return undefined
-}
-
 export const parsePropertyType = (normalizedInput: string): ParsedSearchFilters['propertyType'] => {
   const match = normalizedInput.match(PROPERTY_TYPE_PARSE_RE)?.[0] ?? ''
   if (/chung\s*cu|can\s*ho/u.test(match)) return 'apartment'
@@ -191,7 +182,6 @@ export const buildKeyword = (input: string, tab: SearchTab): string => {
       .replace(AREA_SINGLE_REMOVE_RE, ' ')
       .replace(PRICE_RANGE_REMOVE_RE, ' ')
       .replace(PRICE_SINGLE_REMOVE_RE, ' ')
-      .replace(LISTING_TYPE_REMOVE_RE, ' ')
       .replace(PROPERTY_TYPE_REMOVE_RE, ' ')
       .replace(DIRECTION_REMOVE_RE, ' ')
       .replace(LEGAL_STATUS_REMOVE_RE, ' ')

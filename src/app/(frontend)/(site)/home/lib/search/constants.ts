@@ -20,7 +20,6 @@ export const AREA_SINGLE_PARSE_RE =
 export const PRICE_RANGE_PARSE_RE =
   /(?:\btu\b\s*)?(\d+(?:[.,]\d+)?)\s*(ty|t|trieu|tr|m|billion|million)\s*(?:-|–|—|den|toi|toi da|~)\s*(\d+(?:[.,]\d+)?)\s*(ty|t|trieu|tr|m|billion|million)?/i
 export const PRICE_SINGLE_PARSE_RE = /(\d+(?:[.,]\d+)?)\s*(ty|t|trieu|tr|m|billion|million)\b/i
-export const LISTING_TYPE_PARSE_RE = /\b(?:ban|mua\s*ban|cho\s*thue|thue)\b/i
 export const PROPERTY_TYPE_PARSE_RE =
   /\b(?:nha\s*rieng|nha\s*pho|chung\s*cu|can\s*ho|dat\s*nen|biet\s*thu|shophouse|penthouse|condotel|kho|xuong|mat\s*bang)\b/i
 export const DIRECTION_PARSE_RE =
@@ -45,7 +44,6 @@ export const PRICE_RANGE_REMOVE_RE =
   /(?:\btu\b\s*)?\d+(?:[.,]\d+)?\s*(?:ty|tỷ|t|trieu|triệu|tr|m|billion|million)\s*(?:-|–|—|đến|den|toi|tới|toi da|tối đa|~)\s*\d+(?:[.,]\d+)?\s*(?:ty|tỷ|t|trieu|triệu|tr|m|billion|million)?/giu
 export const PRICE_SINGLE_REMOVE_RE =
   /\d+(?:[.,]\d+)?\s*(?:ty|tỷ|t|trieu|triệu|tr|m|billion|million)\b/giu
-export const LISTING_TYPE_REMOVE_RE = /\b(?:ban|mua\s*ban|cho\s*thue|thue)\b/giu
 export const PROPERTY_TYPE_REMOVE_RE =
   /\b(?:nha\s*rieng|nha\s*pho|chung\s*cu|can\s*ho|dat\s*nen|biet\s*thu|shophouse|penthouse|condotel|kho|xuong|mat\s*bang)\b/giu
 export const DIRECTION_REMOVE_RE =

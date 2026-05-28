@@ -22,7 +22,6 @@ type SeedListing = {
   title: string
   slug: string
   description: string
-  listingType: 'sale' | 'rent'
   postType: 'normal' | 'vip'
   price: number
   priceUnit: 'total' | 'per_m2' | 'per_month' | 'negotiable'
@@ -120,7 +119,6 @@ const buildSeedListings = (projects: SeedProject[]): SeedListing[] => {
         title: `Can ho du an ${project.name} block ${String.fromCharCode(65 + i)}`,
         slug: `can-ho-${project.slug}-${i + 1}`,
         description: `Can ho thuoc du an ${project.name}, phu hop o va dau tu cho thue.`,
-        listingType: i % 2 === 0 ? 'sale' : 'rent',
         postType: i % 3 === 0 ? 'vip' : 'normal',
         price: 2200 + apartmentCounter * 180,
         priceUnit: i % 2 === 0 ? 'total' : 'per_month',
@@ -175,7 +173,6 @@ const buildSeedListings = (projects: SeedProject[]): SeedListing[] => {
       title: `Nha pho trung tam khu vuc ${i + 1}`,
       slug: `nha-pho-tu-do-${i + 1}`,
       description: 'Nha pho khong thuoc du an, phap ly ro rang, giao thong thuan tien.',
-      listingType: i % 3 === 0 ? 'rent' : 'sale',
       postType: i % 4 === 0 ? 'vip' : 'normal',
       price: 4800 + i * 320,
       priceUnit: i % 3 === 0 ? 'per_month' : 'total',
@@ -199,7 +196,6 @@ const buildSeedListings = (projects: SeedProject[]): SeedListing[] => {
       title: `Dat nen phap ly day du khu ${i + 1}`,
       slug: `dat-nen-tu-do-${i + 1}`,
       description: 'Dat nen nha dat tu do, phu hop dau tu trung han va dai han.',
-      listingType: 'sale',
       postType: i % 5 === 0 ? 'vip' : 'normal',
       price: 2800 + i * 260,
       priceUnit: 'total',

@@ -39,7 +39,6 @@ export type PropertyFiltersState = {
   maxPrice?: number
   minArea?: number
   maxArea?: number
-  listingTypes?: string[]
   postTypes?: string[]
   directions?: string[]
   legalStatuses?: string[]
@@ -104,7 +103,6 @@ export async function fetchPropertiesByPostType(
     maxPrice: typeof filters?.maxPrice === 'number' ? filters.maxPrice : undefined,
     minArea: typeof filters?.minArea === 'number' ? filters.minArea : undefined,
     maxArea: typeof filters?.maxArea === 'number' ? filters.maxArea : undefined,
-    listingTypes: filters?.listingTypes?.length ? filters.listingTypes.join(',') : undefined,
     postTypes: filters?.postTypes?.length ? filters.postTypes.join(',') : undefined,
     directions: filters?.directions?.length ? filters.directions.join(',') : undefined,
     legalStatuses: filters?.legalStatuses?.length ? filters.legalStatuses.join(',') : undefined,

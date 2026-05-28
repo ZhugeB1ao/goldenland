@@ -35,18 +35,7 @@ const createAttributeTags = (
 
 export const PROPERTY_ATTRIBUTE_TAGS = createAttributeTags(
   [
-    {
-      label: 'bán',
-      aliases: ['ban', 'bán', 'mua bán', 'nha dat ban', 'nhà đất bán'],
-      filter: { listingType: 'sale' },
-      popularity: 88,
-    },
-    {
-      label: 'cho thuê',
-      aliases: ['cho thue', 'cho thuê', 'thue', 'thuê', 'nha thue', 'nhà thuê'],
-      filter: { listingType: 'rent' },
-      popularity: 84,
-    },
+    { label: 'bán', aliases: ['ban', 'bán', 'mua bán', 'nha dat ban', 'nhà đất bán'], popularity: 88 },
     {
       label: 'tin VIP',
       aliases: ['vip', 'tin vip', 'bai vip', 'bài vip'],

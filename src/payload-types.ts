@@ -349,7 +349,6 @@ export interface Property {
    */
   slug?: string | null;
   description: string;
-  listingType: 'sale' | 'rent';
   postType?: ('normal' | 'vip') | null;
   price: number;
   priceUnit?: ('total' | 'per_m2' | 'per_month' | 'negotiable') | null;
@@ -1157,7 +1156,6 @@ export interface PropertiesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   description?: T;
-  listingType?: T;
   postType?: T;
   price?: T;
   priceUnit?: T;

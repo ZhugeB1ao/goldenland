@@ -1,5 +1,6 @@
 import React from 'react'
 import type { Project } from '@/payload-types'
+import { formatLocationByCodes } from '../../properties/lib/utils'
 
 interface ProjectGridItemProps {
   project: Project
@@ -9,6 +10,10 @@ export function ProjectGridItem({ project }: ProjectGridItemProps) {
   const thumbnail = typeof project.thumbnail === 'object' ? project.thumbnail?.url : null
   const fallbackImage = 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&q=80'
   const imageCount = project.images?.length || 0
+  const locationText = formatLocationByCodes({
+    provinceCode: project.provinceCode,
+    wardCode: project.wardCode,
+  })
 
   return (
     <div className="cursor-pointer overflow-hidden rounded-lg border border-outline-variant/20 bg-white shadow-sm transition-all hover:shadow-lg">
@@ -49,8 +54,8 @@ export function ProjectGridItem({ project }: ProjectGridItemProps) {
         <p className="text-xs text-secondary">
           {project.totalArea ? `${project.totalArea} ha` : 'Đang cập nhật diện tích'}
         </p>
-        <p className="mt-2 line-clamp-1 text-xs text-zinc-500" title={project.address || ''}>
-          {project.address || 'Liên hệ để biết vị trí'}
+        <p className="mt-2 line-clamp-1 text-xs text-zinc-500" title={locationText}>
+          {locationText}
         </p>
       </div>
     </div>

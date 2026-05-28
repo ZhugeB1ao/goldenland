@@ -1,5 +1,5 @@
 import type { Project, Property } from '@/payload-types'
-import { FALLBACK_IMAGE, formatLocation, formatPrice } from '../lib/utils'
+import { FALLBACK_IMAGE, formatLocation, formatLocationByCodes, formatPrice } from '../lib/utils'
 import config from '@payload-config'
 import { getPayload } from 'payload'
 import { notFound } from 'next/navigation'
@@ -92,11 +92,6 @@ const FURNITURE_STATUS_LABELS: Record<string, string> = {
   none: 'Không nội thất',
 }
 
-const LISTING_TYPE_LABELS: Record<string, string> = {
-  sale: 'Bán',
-  rent: 'Cho thuê',
-}
-
 const POST_TYPE_LABELS: Record<string, string> = {
   normal: 'Tin thường',
   vip: 'Tin VIP',
@@ -118,7 +113,7 @@ function buildFeatureItems(property: Property): FeatureItem[] {
     items.push({ label, value: text, icon })
   }
 
-  pushItem('Loại giao dịch', LISTING_TYPE_LABELS[property.listingType], 'sell')
+  pushItem('Loại giao dịch', 'Bán', 'sell')
   pushItem('Loại bất động sản', PROPERTY_TYPE_LABELS[property.propertyType], 'home_work')
   pushItem('Diện tích', property.area ? `${property.area} m²` : null, 'aspect_ratio')
   pushItem('Phòng ngủ', property.bedrooms, 'bed')
@@ -163,7 +158,11 @@ function buildProjectInfo(project: Project): FeatureItem[] {
     project.investor && typeof project.investor === 'object' ? project.investor.name : null,
     'apartment',
   )
-  pushItem('Địa chỉ', project.address, 'location_on')
+  pushItem(
+    'Khu vực',
+    formatLocationByCodes({ provinceCode: project.provinceCode, wardCode: project.wardCode }),
+    'location_on',
+  )
   pushItem('Tổng diện tích', project.totalArea ? `${project.totalArea} ha` : null, 'square_foot')
   pushItem('Tổng số căn/lô', project.totalUnits, 'home')
   pushItem('Giá', priceRange, 'payments')
@@ -262,6 +261,20 @@ export default async function PropertyDetailPage({ params }: PageProps) {
   ]
 
   const project = typeof property.project === 'object' ? property.project : null
+  const mapCoordinates = (() => {
+    if (project) {
+      if (typeof project.latitude === 'number' && typeof project.longitude === 'number') {
+        return { lat: project.latitude, lng: project.longitude }
+      }
+      return null
+    }
+
+    if (typeof property.latitude === 'number' && typeof property.longitude === 'number') {
+      return { lat: property.latitude, lng: property.longitude }
+    }
+
+    return null
+  })()
   const projectItems = project ? buildProjectInfo(project) : []
   const projectTitle = project ? getProjectTitle(project) : ''
   const forYouProperties = await fetchForYouProperties(property)
@@ -309,11 +322,11 @@ export default async function PropertyDetailPage({ params }: PageProps) {
         <div className="lg:col-span-2 space-y-12">
           <DescriptionSection description={property.description} />
           <FeaturesSection items={featureItems} />
-          {typeof property.latitude === 'number' && typeof property.longitude === 'number' ? (
+          {mapCoordinates ? (
             <MapSection
               locationText={locationText}
-              lat={property.latitude}
-              lng={property.longitude}
+              lat={mapCoordinates.lat}
+              lng={mapCoordinates.lng}
               label={property.title}
             />
           ) : (

@@ -38,7 +38,6 @@ export function removeSearchTokenByChip(input: string, chip: SearchChip): string
 
   if (
     chip.key === 'province' ||
-    chip.key === 'listingType' ||
     chip.key === 'propertyType' ||
     chip.key === 'direction' ||
     chip.key === 'legalStatus' ||

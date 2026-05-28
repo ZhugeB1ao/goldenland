@@ -59,21 +59,15 @@ async function seed() {
       propertyType = getRandomItem(projectTypes)
     }
 
-    const listingType = getRandomBoolean() ? 'sale' : 'rent'
     const titleBase = getRandomItem(TITLES)
     const title = `${titleBase} - Mã TS${getRandomInt(1000, 9999)}`
     
     let price = 0
     let priceUnit: 'total' | 'per_m2' | 'per_month' = 'total'
-    if (listingType === 'sale') {
-      price = getRandomInt(1, 20) * 1000000000 // 1 to 20 tỷ
-      priceUnit = getRandomBoolean() ? 'total' : 'per_m2'
-      if (priceUnit === 'per_m2') {
-         price = getRandomInt(30, 200) * 1000000 // 30 to 200 triệu / m2
-      }
-    } else {
-      price = getRandomInt(5, 50) * 1000000 // 5 to 50 triệu / tháng
-      priceUnit = 'per_month'
+    price = getRandomInt(1, 20) * 1000000000 // 1 to 20 tỷ
+    priceUnit = getRandomBoolean() ? 'total' : 'per_m2'
+    if (priceUnit === 'per_m2') {
+      price = getRandomInt(30, 200) * 1000000 // 30 to 200 triệu / m2
     }
 
     const area = getRandomInt(30, 300)
@@ -99,7 +93,6 @@ async function seed() {
         data: {
           title,
           description: `${getRandomItem(DESCRIPTIONS)} ${getRandomItem(DESCRIPTIONS)}`,
-          listingType,
           postType: getRandomBoolean() ? 'normal' : 'vip',
           price,
           priceUnit,

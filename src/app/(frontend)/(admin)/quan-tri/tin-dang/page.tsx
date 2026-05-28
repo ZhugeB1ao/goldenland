@@ -38,7 +38,6 @@ export default async function PropertiesApprovalPage({
 
   const status = (pickStr(sp.status) as Status) || 'pending'
   const propertyType = pickStr(sp.propertyType)
-  const listingType = pickStr(sp.listingType)
   const q = pickStr(sp.q)?.trim()
   const page = Math.max(1, parseInt(pickStr(sp.page) || '1', 10))
   const limit = 20
@@ -51,9 +50,6 @@ export default async function PropertiesApprovalPage({
   }
   if (propertyType && PROPERTY_TYPE_OPTIONS.includes(propertyType as any)) {
     whereAnd.push({ propertyType: { equals: propertyType } })
-  }
-  if (listingType === 'sale' || listingType === 'rent') {
-    whereAnd.push({ listingType: { equals: listingType } })
   }
   if (q) {
     whereAnd.push({
@@ -87,7 +83,6 @@ export default async function PropertiesApprovalPage({
       <PropertyFilterBar
         status={status}
         propertyType={propertyType}
-        listingType={listingType}
         q={q}
       />
 
