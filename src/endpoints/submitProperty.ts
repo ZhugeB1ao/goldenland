@@ -56,15 +56,62 @@ const toOptionalRelationshipID = (value: unknown): number | undefined => {
 const POST_TYPE_OPTIONS = ['normal', 'silver', 'gold', 'diamond'] as const
 type PostType = (typeof POST_TYPE_OPTIONS)[number]
 
-const NORMAL_DURATIONS = [15, 30, 60]
-const VIP_DURATIONS = [7, 15, 30]
 const VIP_PACKAGE_IDS = new Set(['2', '3'])
 
-const POST_TYPE_PRICING: Record<PostType, { dailyPrice: number; recommendedDuration: number }> = {
-  diamond: { dailyPrice: 321_100, recommendedDuration: 7 },
-  gold: { dailyPrice: 120_900, recommendedDuration: 7 },
-  silver: { dailyPrice: 66_000, recommendedDuration: 7 },
-  normal: { dailyPrice: 3_000, recommendedDuration: 15 },
+type DurationOption = {
+  durationDays: number
+  discountPercent: number
+}
+
+type PostingPriceConfig = {
+  dailyPrice: number
+  recommendedDurationDays: number
+  durationOptions: DurationOption[]
+}
+
+type PostingPriceLike = {
+  dailyPrice?: unknown
+  recommendedDurationDays?: unknown
+  durationOptions?: unknown
+}
+
+const FALLBACK_POSTING_PRICES: Record<PostType, PostingPriceConfig> = {
+  diamond: {
+    dailyPrice: 321_100,
+    recommendedDurationDays: 7,
+    durationOptions: [
+      { durationDays: 7, discountPercent: 0 },
+      { durationDays: 15, discountPercent: 5 },
+      { durationDays: 30, discountPercent: 10 },
+    ],
+  },
+  gold: {
+    dailyPrice: 120_900,
+    recommendedDurationDays: 7,
+    durationOptions: [
+      { durationDays: 7, discountPercent: 0 },
+      { durationDays: 15, discountPercent: 5 },
+      { durationDays: 30, discountPercent: 10 },
+    ],
+  },
+  silver: {
+    dailyPrice: 66_000,
+    recommendedDurationDays: 7,
+    durationOptions: [
+      { durationDays: 7, discountPercent: 0 },
+      { durationDays: 15, discountPercent: 5 },
+      { durationDays: 30, discountPercent: 10 },
+    ],
+  },
+  normal: {
+    dailyPrice: 3_000,
+    recommendedDurationDays: 15,
+    durationOptions: [
+      { durationDays: 15, discountPercent: 0 },
+      { durationDays: 30, discountPercent: 5 },
+      { durationDays: 60, discountPercent: 10 },
+    ],
+  },
 }
 
 const isPostType = (value: unknown): value is PostType => {
@@ -108,10 +155,41 @@ const getScheduledPublishAt = (value: unknown, canUseScheduledHour: boolean) => 
   return startOfDay(requested)
 }
 
-const getDiscountRate = (durationDays: number, recommendedDuration: number) => {
-  if (durationDays <= recommendedDuration) return 1
-  if (durationDays <= recommendedDuration * 2) return 0.95
-  return 0.9
+const resolvePostingPriceConfig = (
+  postingPrice: PostingPriceLike | undefined,
+  postType: PostType,
+): PostingPriceConfig => {
+  const fallback = FALLBACK_POSTING_PRICES[postType]
+  if (!postingPrice) return fallback
+
+  const durationOptions = Array.isArray(postingPrice.durationOptions)
+    ? postingPrice.durationOptions
+        .map((option): DurationOption | null => {
+          if (!option || typeof option !== 'object') return null
+
+          const durationDays = Number((option as { durationDays?: unknown }).durationDays)
+          const discountPercent = Number((option as { discountPercent?: unknown }).discountPercent || 0)
+
+          if (!Number.isFinite(durationDays) || durationDays <= 0) return null
+
+          return {
+            durationDays,
+            discountPercent: Number.isFinite(discountPercent)
+              ? Math.min(100, Math.max(0, discountPercent))
+              : 0,
+          }
+        })
+        .filter((option): option is DurationOption => Boolean(option))
+    : []
+
+  return {
+    dailyPrice: Math.max(0, Number(postingPrice.dailyPrice || fallback.dailyPrice)),
+    recommendedDurationDays: Math.max(
+      1,
+      Number(postingPrice.recommendedDurationDays || fallback.recommendedDurationDays),
+    ),
+    durationOptions: durationOptions.length > 0 ? durationOptions : fallback.durationOptions,
+  }
 }
 
 export const submitProperty: Endpoint = {
@@ -147,9 +225,40 @@ export const submitProperty: Endpoint = {
       const imageFiles = formData.getAll('images').filter(isFormDataFile)
       const postType = isPostType(draft.postType) ? draft.postType : 'normal'
       const isVipPost = postType !== 'normal'
-      const allowedDurations = isVipPost ? VIP_DURATIONS : NORMAL_DURATIONS
+
+      const postingPriceResult = await payload.find({
+        collection: 'posting-prices',
+        where: {
+          and: [{ postType: { equals: postType } }, { isActive: { equals: true } }],
+        },
+        sort: 'sort',
+        limit: 1,
+        overrideAccess: false,
+        req,
+      })
+
+      const postingPrice = postingPriceResult.docs[0]
+      const pricingConfig = resolvePostingPriceConfig(postingPrice, postType)
+      const allowedDurations = pricingConfig.durationOptions.map((option) => option.durationDays)
       const requestedDuration = Number(draft.durationDays)
-      const durationDays = allowedDurations.includes(requestedDuration) ? requestedDuration : 15
+      const fallbackDuration = allowedDurations.includes(pricingConfig.recommendedDurationDays)
+        ? pricingConfig.recommendedDurationDays
+        : allowedDurations[0] || pricingConfig.recommendedDurationDays
+      const durationDays = allowedDurations.includes(requestedDuration)
+        ? requestedDuration
+        : fallbackDuration
+      const selectedDurationOption =
+        pricingConfig.durationOptions.find((option) => option.durationDays === durationDays) ||
+        pricingConfig.durationOptions[0]
+      const discountPercent = selectedDurationOption?.discountPercent || 0
+      const originalAmount = Math.round(
+        pricingConfig.dailyPrice * durationDays * (1 - discountPercent / 100),
+      )
+      const totalAmount = Math.max(0, originalAmount)
+
+      if (originalAmount <= 0) {
+        return Response.json({ error: 'Không tìm thấy giá đăng tin phù hợp' }, { status: 400 })
+      }
 
       const currentUser = await payload.findByID({
         collection: 'users',
@@ -196,36 +305,6 @@ export const submitProperty: Endpoint = {
         !draft.price
       ) {
         return Response.json({ error: 'Dữ liệu tin đăng chưa đầy đủ' }, { status: 400 })
-      }
-
-      const postingPriceResult = await payload.find({
-        collection: 'posting-prices',
-        where: {
-          and: [
-            { postType: { equals: postType } },
-            { durationDays: { equals: durationDays } },
-            { isActive: { equals: true } },
-          ],
-        },
-        limit: 1,
-        overrideAccess: false,
-        req,
-      })
-
-      const postingPrice = postingPriceResult.docs[0]
-      const pricingConfig = POST_TYPE_PRICING[postType]
-
-      const originalAmount = postingPrice
-        ? Number(postingPrice.price || 0)
-        : Math.round(
-            pricingConfig.dailyPrice *
-              getDiscountRate(durationDays, pricingConfig.recommendedDuration) *
-              durationDays,
-          )
-      const totalAmount = Math.max(0, originalAmount)
-
-      if (!postingPrice && originalAmount <= 0) {
-        return Response.json({ error: 'Không tìm thấy giá đăng tin phù hợp' }, { status: 400 })
       }
       const currentBalance = Number(currentUser.balance || 0)
 

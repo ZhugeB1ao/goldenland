@@ -44,6 +44,20 @@ const STATUS_LABEL: Record<string, string> = {
   rejected: 'Bị từ chối',
 }
 
+const POST_TYPE_BADGE: Record<string, string> = {
+  normal: 'bg-zinc-100 text-zinc-700',
+  silver: 'bg-teal-100 text-teal-700',
+  gold: 'bg-amber-100 text-amber-700',
+  diamond: 'bg-red-100 text-red-700',
+}
+
+const POST_TYPE_LABEL: Record<string, string> = {
+  normal: 'Tin thường',
+  silver: 'VIP Bạc',
+  gold: 'VIP Vàng',
+  diamond: 'VIP Kim Cương',
+}
+
 const PRICE_UNIT: Record<string, string> = {
   total: '',
   per_m2: '/m²',
@@ -396,11 +410,20 @@ function ManagementInner() {
                           <h3 className="line-clamp-2 text-base font-semibold text-zinc-900">
                             {p.title}
                           </h3>
-                          <span
-                            className={`inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_BADGE[p.status] || 'bg-zinc-100 text-zinc-600'}`}
-                          >
-                            {STATUS_LABEL[p.status] || p.status}
-                          </span>
+                          <div className="flex flex-wrap gap-1.5 sm:justify-end">
+                            {p.postType ? (
+                              <span
+                                className={`inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${POST_TYPE_BADGE[p.postType] || 'bg-zinc-100 text-zinc-600'}`}
+                              >
+                                {POST_TYPE_LABEL[p.postType] || p.postType}
+                              </span>
+                            ) : null}
+                            <span
+                              className={`inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_BADGE[p.status] || 'bg-zinc-100 text-zinc-600'}`}
+                            >
+                              {STATUS_LABEL[p.status] || p.status}
+                            </span>
+                          </div>
                         </div>
                         <p className="mt-1 text-sm font-bold text-red-600">
                           {formatPrice(p.price, p.priceUnit)}
@@ -414,12 +437,6 @@ function ManagementInner() {
                       </div>
 
                       <div className="flex items-center gap-2 sm:flex-col sm:items-stretch">
-                        <Link
-                          href={`/account/management/${p.id}/edit`}
-                          className="rounded-lg border border-zinc-200 px-3 py-1.5 text-center text-xs font-medium text-zinc-700 transition hover:bg-zinc-50"
-                        >
-                          Sửa
-                        </Link>
                         <button
                           type="button"
                           onClick={() => handleDelete(p.id)}

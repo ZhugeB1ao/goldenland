@@ -12,6 +12,7 @@ export type ManagedProperty = {
   provinceCode?: string
   wardCode?: string
   status: string
+  postType?: string
   propertyType: string
   area?: number
   createdAt: string

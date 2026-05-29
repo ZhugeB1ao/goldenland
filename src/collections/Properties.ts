@@ -1,3 +1,4 @@
+import { createClient } from '@supabase/supabase-js'
 import type { CollectionConfig } from 'payload'
 
 import { authenticated, ownerOrAdmin, statusOrOwnerOrAdmin, adminOnlyField } from '@/access'
@@ -5,6 +6,8 @@ import {
     refreshScheduledProperties,
     SCHEDULE_CONTEXT_KEY,
 } from '@/hooks/refreshScheduledProperties'
+
+const PROPERTIES_BUCKET = 'Properties'
 
 const normalizeProjectID = (project: unknown): string | null => {
     if (typeof project === 'string' || typeof project === 'number') return String(project)
@@ -45,6 +48,107 @@ const extractStreetFromAddress = (address: string | null | undefined): string | 
     }
 
     return firstSegment
+}
+
+const PROPERTY_TYPE_LABELS: Record<string, string> = {
+    house: 'nhà riêng',
+    apartment: 'căn hộ',
+    land: 'đất nền',
+    villa: 'biệt thự',
+    townhouse: 'nhà phố',
+    shophouse: 'shophouse',
+    penthouse: 'penthouse',
+    condotel: 'condotel',
+    warehouse: 'kho xưởng',
+    commercial: 'mặt bằng',
+}
+
+const truncateText = (value: string, maxLength: number): string => {
+    if (value.length <= maxLength) return value
+    return value.slice(0, maxLength).replace(/\s+\S*$/, '').trim()
+}
+
+const cleanText = (value: unknown): string | null => {
+    if (typeof value !== 'string') return null
+    const trimmed = value.trim().replace(/\s+/g, ' ')
+    return trimmed || null
+}
+
+const buildPropertySEO = (data: Record<string, unknown>, projectName?: string | null) => {
+    const title = cleanText(data.title)
+    const description = cleanText(data.description)
+    const address = cleanText(data.address)
+    const street = cleanText(data.street)
+    const propertyType =
+        typeof data.propertyType === 'string'
+            ? PROPERTY_TYPE_LABELS[data.propertyType] || data.propertyType
+            : 'bất động sản'
+    const location = address || street
+    const projectText = projectName ? ` tại ${projectName}` : ''
+    const locationText = location ? `, ${location}` : ''
+
+    const seoTitle = truncateText(title || `Bán ${propertyType}${projectText}${locationText}`, 70)
+    const seoDescription = truncateText(
+        description ||
+        `Thông tin ${propertyType}${projectText}${location ? ` ở ${location}` : ''}. Xem chi tiết giá, diện tích, vị trí và liên hệ tư vấn.`,
+        160,
+    )
+    const seoKeywords = truncateText(
+        [
+            title,
+            propertyType,
+            projectName,
+            address,
+            street,
+            'bất động sản',
+            'nhà đất',
+        ]
+            .filter(Boolean)
+            .join(', '),
+        255,
+    )
+
+    return {
+        seoTitle,
+        seoDescription,
+        seoKeywords,
+    }
+}
+
+const extractPropertyImagePath = (imageUrl: unknown): string | null => {
+    if (typeof imageUrl !== 'string' || !imageUrl.trim()) return null
+
+    try {
+        const { pathname } = new URL(imageUrl)
+        const marker = `/storage/v1/object/public/${PROPERTIES_BUCKET}/`
+        const markerIndex = pathname.indexOf(marker)
+
+        if (markerIndex === -1) return null
+
+        return decodeURIComponent(pathname.slice(markerIndex + marker.length))
+    } catch {
+        return null
+    }
+}
+
+const deletePropertyImagesFromBucket = async (imageUrls: unknown[]) => {
+    const supabaseUrl = process.env.SUPABASE_URL
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseUrl || !supabaseKey) return
+
+    const paths = Array.from(
+        new Set(imageUrls.map(extractPropertyImagePath).filter((path): path is string => Boolean(path))),
+    )
+
+    if (paths.length === 0) return
+
+    const supabase = createClient(supabaseUrl, supabaseKey)
+    const { error } = await supabase.storage.from(PROPERTIES_BUCKET).remove(paths)
+
+    if (error) {
+        throw new Error(`Không thể xóa ảnh tin đăng khỏi bucket: ${error.message}`)
+    }
 }
 
 export const Properties: CollectionConfig = {
@@ -495,7 +599,7 @@ export const Properties: CollectionConfig = {
             },
         ],
         beforeChange: [
-            async ({ data, originalDoc, req }) => {
+            async ({ data, operation, originalDoc, req }) => {
                 // Tự sinh slug từ title
                 if (data?.title && !data?.slug) {
                     data.slug = data.title
@@ -508,36 +612,67 @@ export const Properties: CollectionConfig = {
                 }
 
                 const projectId = normalizeProjectID(data?.project ?? originalDoc?.project)
-                if (!projectId) return data
+                let projectName: string | null = null
 
-                const project = await req.payload.findByID({
-                    collection: 'projects',
-                    id: projectId,
-                    depth: 0,
-                    overrideAccess: false,
-                    req,
-                    select: {
-                        provinceCode: true,
-                        wardCode: true,
-                        address: true,
-                        latitude: true,
-                        longitude: true,
-                    },
-                })
+                if (projectId) {
+                    const project = await req.payload.findByID({
+                        collection: 'projects',
+                        id: projectId,
+                        depth: 0,
+                        overrideAccess: false,
+                        req,
+                        select: {
+                            name: true,
+                            provinceCode: true,
+                            wardCode: true,
+                            address: true,
+                            latitude: true,
+                            longitude: true,
+                        },
+                    })
 
-                data.provinceCode = project.provinceCode || null
-                data.wardCode = project.wardCode || null
-                data.street = extractStreetFromAddress(project.address) || null
-                data.address = project.address || null
+                    projectName = cleanText(project.name)
+                    data.provinceCode = project.provinceCode || null
+                    data.wardCode = project.wardCode || null
+                    data.street = extractStreetFromAddress(project.address) || null
+                    data.address = project.address || null
 
-                if (typeof project.latitude === 'number') {
-                    data.latitude = project.latitude
+                    if (typeof project.latitude === 'number') {
+                        data.latitude = project.latitude
+                    }
+                    if (typeof project.longitude === 'number') {
+                        data.longitude = project.longitude
+                    }
                 }
-                if (typeof project.longitude === 'number') {
-                    data.longitude = project.longitude
+
+                if (operation === 'create') {
+                    const generatedSEO = buildPropertySEO(data, projectName)
+                    data.seoTitle = cleanText(data.seoTitle) || generatedSEO.seoTitle
+                    data.seoDescription = cleanText(data.seoDescription) || generatedSEO.seoDescription
+                    data.seoKeywords = cleanText(data.seoKeywords) || generatedSEO.seoKeywords
                 }
 
                 return data
+            },
+        ],
+        beforeDelete: [
+            async ({ id, req }) => {
+                const property = await req.payload.findByID({
+                    collection: 'properties',
+                    id,
+                    depth: 0,
+                    overrideAccess: true,
+                    req,
+                    select: {
+                        images: true,
+                    },
+                })
+
+                const imageUrls = Array.isArray(property.images)
+                    ? property.images.map((item) => item?.image)
+                    : []
+
+                await deletePropertyImagesFromBucket(imageUrls)
             },
         ],
     },

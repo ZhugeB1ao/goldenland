@@ -761,18 +761,44 @@ export interface Report {
 export interface PostingPrice {
   id: number;
   /**
-   * VD: Tin thường 15 ngày, Tin VIP vàng 30 ngày
+   * VD: Tin thường, VIP bạc, VIP vàng, VIP kim cương
    */
   name: string;
+  /**
+   * Mô tả ngắn quyền lợi/độ ưu tiên của loại tin
+   */
+  description?: string | null;
   postType: 'normal' | 'silver' | 'gold' | 'diamond';
   /**
-   * Số ngày hiển thị
+   * Số lần hiển thị/ưu tiên nhiều hơn so với tin thường. VD: 8, 15, 30
    */
-  durationDays: number;
+  displayMultiplier: number;
   /**
-   * Giá (VNĐ)
+   * Giá 1 ngày (VNĐ)
    */
-  price: number;
+  dailyPrice: number;
+  /**
+   * Số ngày đề xuất khi user chọn loại tin này
+   */
+  recommendedDurationDays: number;
+  /**
+   * Các mốc ngày được phép chọn. Ngày càng nhiều có thể đặt % ưu đãi càng cao.
+   */
+  durationOptions: {
+    /**
+     * Số ngày hiển thị
+     */
+    durationDays: number;
+    /**
+     * Giảm trên giá/ngày, VD: 5 nghĩa là giảm 5%
+     */
+    discountPercent?: number | null;
+    /**
+     * Nhãn hiển thị tùy chọn, VD: Đề xuất, Tiết kiệm 5%
+     */
+    label?: string | null;
+    id?: string | null;
+  }[];
   sort?: number | null;
   isActive?: boolean | null;
   updatedAt: string;
@@ -1428,9 +1454,19 @@ export interface PackagesSelect<T extends boolean = true> {
  */
 export interface PostingPricesSelect<T extends boolean = true> {
   name?: T;
+  description?: T;
   postType?: T;
-  durationDays?: T;
-  price?: T;
+  displayMultiplier?: T;
+  dailyPrice?: T;
+  recommendedDurationDays?: T;
+  durationOptions?:
+    | T
+    | {
+        durationDays?: T;
+        discountPercent?: T;
+        label?: T;
+        id?: T;
+      };
   sort?: T;
   isActive?: T;
   updatedAt?: T;

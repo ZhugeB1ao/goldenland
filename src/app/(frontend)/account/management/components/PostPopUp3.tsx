@@ -17,6 +17,12 @@ type PostPopUp3Props = {
 const MIN_IMAGES = 3
 type PostType = 'normal' | 'silver' | 'gold' | 'diamond'
 
+type DurationOption = {
+  durationDays: number
+  discountPercent: number
+  label?: string
+}
+
 type VoucherOption = {
   id: number
   code: string
@@ -26,68 +32,96 @@ type VoucherOption = {
   expiresAt?: string | null
 }
 
-const POST_TYPES: Array<{
+type PostTypeOption = {
   value: PostType
   title: string
   subtitle: string
   multiplier?: string
   recommendedDuration: number
   dailyPrice: number
+  durationOptions: DurationOption[]
   price: string
   accent: string
   bars: number
-}> = [
-  {
-    value: 'diamond',
-    title: 'VIP Kim Cương',
-    subtitle: 'Hiển thị trên cùng',
-    multiplier: 'X30',
-    recommendedDuration: 7,
-    dailyPrice: 321_100,
-    price: '321.100 đ/ngày',
-    accent: 'bg-red-600 text-red-600',
-    bars: 3,
-  },
-  {
-    value: 'gold',
-    title: 'VIP Vàng',
-    subtitle: 'Dưới VIP Kim Cương',
-    multiplier: 'X15',
-    recommendedDuration: 7,
-    dailyPrice: 120_900,
-    price: '120.900 đ/ngày',
-    accent: 'bg-amber-500 text-amber-600',
-    bars: 2,
-  },
-  {
-    value: 'silver',
-    title: 'VIP Bạc',
-    subtitle: 'Dưới VIP Vàng',
-    multiplier: 'X8',
-    recommendedDuration: 7,
-    dailyPrice: 66_000,
-    price: '66.000 đ/ngày',
-    accent: 'bg-teal-500 text-teal-600',
-    bars: 1,
-  },
-  {
-    value: 'normal',
-    title: 'Tin Thường',
-    subtitle: 'Hiển thị tiêu chuẩn',
-    recommendedDuration: 15,
-    dailyPrice: 3_000,
-    price: '3.000 đ/ngày',
-    accent: 'bg-zinc-300 text-zinc-600',
-    bars: 1,
-  },
-]
+}
 
-const NORMAL_DURATIONS = [15, 30, 60]
-const VIP_DURATIONS = [7, 15, 30]
+type PostingPriceDoc = {
+  id: number
+  name?: string | null
+  description?: string | null
+  postType?: PostType | null
+  displayMultiplier?: number | null
+  dailyPrice?: number | null
+  recommendedDurationDays?: number | null
+  durationOptions?: Array<{
+    durationDays?: number | null
+    discountPercent?: number | null
+    label?: string | null
+  }> | null
+}
+
 const VIP_PACKAGE_IDS = new Set(['2', '3'])
 const PRICE_FORMATTER = new Intl.NumberFormat('vi-VN')
 
 const formatMoney = (value: number) => PRICE_FORMATTER.format(Math.max(0, Math.round(value)))
+
+const POST_TYPE_STYLES: Record<PostType, Pick<PostTypeOption, 'accent' | 'bars'>> = {
+  diamond: { accent: 'bg-red-600 text-red-600', bars: 3 },
+  gold: { accent: 'bg-amber-500 text-amber-600', bars: 2 },
+  silver: { accent: 'bg-teal-500 text-teal-600', bars: 1 },
+  normal: { accent: 'bg-zinc-300 text-zinc-600', bars: 1 },
+}
+
+const POST_TYPE_ORDER: Record<PostType, number> = {
+  diamond: 0,
+  gold: 1,
+  silver: 2,
+  normal: 3,
+}
+
+const mapPostingPriceToPostType = (doc: PostingPriceDoc): PostTypeOption | null => {
+  if (!doc.postType) return null
+
+  const style = POST_TYPE_STYLES[doc.postType]
+  const dailyPrice = Number(doc.dailyPrice)
+  const recommendedDuration = Number(doc.recommendedDurationDays)
+
+  if (!Number.isFinite(dailyPrice) || dailyPrice < 0) return null
+  if (!Number.isFinite(recommendedDuration) || recommendedDuration <= 0) return null
+
+  const durationOptions = Array.isArray(doc.durationOptions)
+    ? doc.durationOptions
+        .map((option): DurationOption | null => {
+          const durationDays = Number(option.durationDays)
+          if (!Number.isFinite(durationDays) || durationDays <= 0) return null
+
+          return {
+            durationDays,
+            discountPercent: Math.min(100, Math.max(0, Number(option.discountPercent || 0))),
+            label: option.label || undefined,
+          }
+        })
+        .filter((option): option is DurationOption => Boolean(option))
+    : []
+
+  if (durationOptions.length === 0) return null
+
+  return {
+    value: doc.postType,
+    title: doc.name || doc.postType,
+    subtitle: doc.description || '',
+    multiplier:
+      doc.displayMultiplier && doc.displayMultiplier > 1
+        ? `X${PRICE_FORMATTER.format(doc.displayMultiplier)}`
+        : undefined,
+    recommendedDuration,
+    dailyPrice,
+    durationOptions,
+    price: `${formatMoney(dailyPrice)} đ/ngày`,
+    accent: style.accent,
+    bars: style.bars,
+  }
+}
 
 const formatVoucherLabel = (voucher: VoucherOption) => {
   if (voucher.discountType === 'fixed') {
@@ -143,10 +177,13 @@ export default function PostPopUp3({ draft, onBack, onClose }: PostPopUp3Props) 
   const user = useSelector((state: RootState) => selectUser(state))
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [postType, setPostType] = useState<PostType>('normal')
-  const [durationDays, setDurationDays] = useState(15)
+  const [postType, setPostType] = useState<PostType | ''>('')
+  const [durationDays, setDurationDays] = useState(0)
   const [startDate, setStartDate] = useState(() => toDateInputValue(new Date()))
   const [startTime, setStartTime] = useState('now')
+  const [postTypes, setPostTypes] = useState<PostTypeOption[]>([])
+  const [pricingLoading, setPricingLoading] = useState(false)
+  const [pricingError, setPricingError] = useState('')
   const [fetchedActivePackageID, setFetchedActivePackageID] = useState('')
   const [vouchers, setVouchers] = useState<VoucherOption[]>([])
   const [selectedVoucherId, setSelectedVoucherId] = useState('')
@@ -166,13 +203,16 @@ export default function PostPopUp3({ draft, onBack, onClose }: PostPopUp3Props) 
       (user as { activePackage?: unknown; active_package_id?: unknown } | null)?.activePackage,
     ) ||
     getRelationshipID((user as { active_package_id?: unknown } | null)?.active_package_id)
-  const isVipPost = postType !== 'normal'
+  const isVipPost = Boolean(postType && postType !== 'normal')
   const canScheduleHour =
     isVipPost || VIP_PACKAGE_IDS.has(activePackageID) || VIP_PACKAGE_IDS.has(userPackageID)
-  const durations = isVipPost ? VIP_DURATIONS : NORMAL_DURATIONS
-  const activePostType = POST_TYPES.find((type) => type.value === postType)
-  const recommendedDuration = activePostType?.recommendedDuration || (isVipPost ? 7 : 15)
+  const activePostType = postTypes.find((type) => type.value === postType)
+  const recommendedDuration = activePostType?.recommendedDuration || 0
   const baseDailyPrice = activePostType?.dailyPrice ?? 0
+  const durationOptions = activePostType?.durationOptions || []
+  const durations = durationOptions.map((option) => option.durationDays)
+  const selectedDurationOption =
+    durationOptions.find((option) => option.durationDays === durationDays) || durationOptions[0]
   const minStartDate = useMemo(() => toDateInputValue(new Date()), [])
   const scheduledDate = getScheduledDate(startDate, startTime, canScheduleHour)
   const endsAt = useMemo(() => {
@@ -180,11 +220,16 @@ export default function PostPopUp3({ draft, onBack, onClose }: PostPopUp3Props) 
     end.setDate(end.getDate() + durationDays)
     return end
   }, [durationDays, scheduledDate])
-  const canSubmit = draft.images.length >= MIN_IMAGES && !submitting
   const isDurationValid = durations.includes(durationDays)
+  const canSubmit =
+    Boolean(activePostType) &&
+    isDurationValid &&
+    draft.images.length >= MIN_IMAGES &&
+    !pricingLoading &&
+    !submitting
 
-  const discountRate = getDiscountRate(durationDays)
-  const discountedDailyPrice = Math.round(baseDailyPrice * discountRate)
+  const discountPercent = selectedDurationOption?.discountPercent || 0
+  const discountedDailyPrice = Math.round(baseDailyPrice * (1 - discountPercent / 100))
   const subtotalAmount = discountedDailyPrice * durationDays
   const selectedVoucher =
     vouchers.find((voucher) => String(voucher.id) === selectedVoucherId) || null
@@ -210,10 +255,84 @@ export default function PostPopUp3({ draft, onBack, onClose }: PostPopUp3Props) 
   const totalAmount = Math.max(0, subtotalAmount - voucherDiscount)
 
   useEffect(() => {
-    if (!isDurationValid) {
-      setDurationDays(recommendedDuration)
+    if (!activePostType || isDurationValid) return
+
+    const nextDuration = activePostType.durationOptions.some(
+      (option) => option.durationDays === activePostType.recommendedDuration,
+    )
+      ? activePostType.recommendedDuration
+      : activePostType.durationOptions[0]?.durationDays
+
+    if (nextDuration) {
+      setDurationDays(nextDuration)
     }
-  }, [isDurationValid, recommendedDuration])
+  }, [activePostType, isDurationValid])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const run = async () => {
+      setPricingLoading(true)
+      setPricingError('')
+
+      try {
+        const params = new URLSearchParams()
+        params.set('depth', '0')
+        params.set('limit', '20')
+        params.set('sort', 'sort')
+        params.set('where[isActive][equals]', 'true')
+
+        const res = await fetch(`/api/posting-prices?${params.toString()}`)
+        if (!res.ok) throw new Error('Không thể tải bảng giá')
+
+        const data = await res.json()
+        const docs: PostingPriceDoc[] = Array.isArray(data?.docs) ? data.docs : []
+        const mapped = docs
+          .map(mapPostingPriceToPostType)
+          .filter((type): type is PostTypeOption => Boolean(type))
+          .sort((a, b) => POST_TYPE_ORDER[a.value] - POST_TYPE_ORDER[b.value])
+
+        if (cancelled) return
+
+        setPostTypes(mapped)
+
+        const selected =
+          mapped.find((type) => type.value === postType) ||
+          mapped.find((type) => type.value === 'normal') ||
+          mapped[0]
+
+        if (selected) {
+          setPostType(selected.value)
+          setDurationDays(
+            selected.durationOptions.some(
+              (option) => option.durationDays === selected.recommendedDuration,
+            )
+              ? selected.recommendedDuration
+              : selected.durationOptions[0].durationDays,
+          )
+        } else {
+          setPostType('')
+          setDurationDays(0)
+          setPricingError('Chưa có cấu hình bảng giá đăng tin.')
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setPostTypes([])
+          setPostType('')
+          setDurationDays(0)
+          setPricingError(err instanceof Error ? err.message : 'Không thể tải bảng giá đăng tin.')
+        }
+      } finally {
+        if (!cancelled) setPricingLoading(false)
+      }
+    }
+
+    void run()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     if (!canScheduleHour) setStartTime('now')
@@ -304,6 +423,10 @@ export default function PostPopUp3({ draft, onBack, onClose }: PostPopUp3Props) 
 
   const handleSubmit = async () => {
     if (!canSubmit) return
+    if (!activePostType) {
+      setError('Chưa có cấu hình loại tin để đăng.')
+      return
+    }
 
     setSubmitting(true)
     setError('')
@@ -312,7 +435,7 @@ export default function PostPopUp3({ draft, onBack, onClose }: PostPopUp3Props) 
     const { images, ...draftPayload } = draft
     const submitPayload = {
       ...draftPayload,
-      postType,
+      postType: activePostType.value,
       durationDays,
       scheduledPublishAt: scheduledDate.toISOString(),
     }
@@ -353,10 +476,13 @@ export default function PostPopUp3({ draft, onBack, onClose }: PostPopUp3Props) 
     }
   }
 
-  function getDiscountRate(duration: number) {
-    if (duration <= recommendedDuration) return 1
-    if (duration <= recommendedDuration * 2) return 0.95
-    return 0.9
+  const handlePostTypeChange = (type: PostTypeOption) => {
+    setPostType(type.value)
+    setDurationDays(
+      type.durationOptions.some((option) => option.durationDays === type.recommendedDuration)
+        ? type.recommendedDuration
+        : type.durationOptions[0]?.durationDays || 0,
+    )
   }
 
   return (
@@ -423,20 +549,22 @@ export default function PostPopUp3({ draft, onBack, onClose }: PostPopUp3Props) 
             <div>
               <h3 className="font-headline text-lg font-bold text-zinc-900">Chọn loại tin</h3>
               <p className="mt-1 text-sm text-zinc-500">
-                Mặc định là Tin Thường 15 ngày. Tin VIP có thêm tuỳ chọn hẹn giờ theo gói.
+                {pricingLoading
+                  ? 'Đang tải bảng giá đăng tin...'
+                  : 'Mặc định là Tin Thường. Tin VIP có thêm tuỳ chọn hẹn giờ theo gói.'}
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {POST_TYPES.map((type) => {
+            {postTypes.map((type) => {
               const selected = postType === type.value
 
               return (
                 <button
                   key={type.value}
                   type="button"
-                  onClick={() => setPostType(type.value)}
+                  onClick={() => handlePostTypeChange(type)}
                   className={`relative min-h-[150px] rounded-xl border p-5 text-left transition ${
                     selected
                       ? 'border-red-600 bg-white shadow-[0_12px_32px_rgba(27,28,28,0.08)]'
@@ -478,6 +606,12 @@ export default function PostPopUp3({ draft, onBack, onClose }: PostPopUp3Props) 
               )
             })}
           </div>
+          {!pricingLoading && pricingError ? (
+            <p className="mt-3 text-sm text-red-600">{pricingError}</p>
+          ) : null}
+          {pricingLoading && postTypes.length === 0 ? (
+            <p className="mt-3 text-sm text-zinc-500">Đang tải dữ liệu loại tin...</p>
+          ) : null}
         </section>
 
         <section className="rounded-xl bg-zinc-50 p-5">
@@ -485,9 +619,10 @@ export default function PostPopUp3({ draft, onBack, onClose }: PostPopUp3Props) 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {durations.map((duration) => {
               const selected = durationDays === duration
-              const discountRate = getDiscountRate(duration)
-              const discountedDaily = Math.round(baseDailyPrice * discountRate)
-              const hasDiscount = duration > recommendedDuration
+              const option = durationOptions.find((item) => item.durationDays === duration)
+              const optionDiscountPercent = option?.discountPercent || 0
+              const discountedDaily = Math.round(baseDailyPrice * (1 - optionDiscountPercent / 100))
+              const hasDiscount = optionDiscountPercent > 0
 
               return (
                 <button
@@ -503,13 +638,13 @@ export default function PostPopUp3({ draft, onBack, onClose }: PostPopUp3Props) 
                       {duration} ngày
                     </span>
                     <span className="text-xs text-zinc-500">
-                      {duration === recommendedDuration ? 'Đề xuất' : 'Tuỳ chọn'}
+                      {option?.label || (duration === recommendedDuration ? 'Đề xuất' : 'Tuỳ chọn')}
                     </span>
                     <span
                       className={`mt-1 block text-xs font-medium ${hasDiscount ? 'text-emerald-600' : 'text-zinc-500'}`}
                     >
                       {hasDiscount
-                        ? `Giá ưu đãi ${PRICE_FORMATTER.format(discountedDaily)} đ/ngày`
+                        ? `Giảm ${optionDiscountPercent}% còn ${PRICE_FORMATTER.format(discountedDaily)} đ/ngày`
                         : `Giá gốc ${PRICE_FORMATTER.format(discountedDaily)} đ/ngày`}
                     </span>
                   </span>
@@ -524,6 +659,9 @@ export default function PostPopUp3({ draft, onBack, onClose }: PostPopUp3Props) 
               )
             })}
           </div>
+          {!pricingLoading && activePostType && durations.length === 0 ? (
+            <p className="text-sm text-red-600">Loại tin này chưa có cấu hình thời hạn.</p>
+          ) : null}
         </section>
 
         <section className="grid grid-cols-1 gap-5 md:grid-cols-2">
