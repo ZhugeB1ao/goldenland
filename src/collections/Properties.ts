@@ -593,7 +593,9 @@ export const Properties: CollectionConfig = {
             async ({ operation, req, context }) => {
                 if (context?.[SCHEDULE_CONTEXT_KEY]) return
 
-                if (operation === 'find' || operation === 'findByID' || operation === 'count') {
+                // Chỉ trigger trên find/findByID — không trigger trên count
+                // vì count chỉ đếm số lượng, không cần data mới nhất về lịch đăng
+                if (operation === 'find' || operation === 'findByID') {
                     await refreshScheduledProperties(req)
                 }
             },

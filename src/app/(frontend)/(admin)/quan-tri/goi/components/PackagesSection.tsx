@@ -2,40 +2,60 @@
 
 import { useState, useTransition } from 'react'
 import { formatVND } from '../../../lib/format'
-import { togglePackageActive } from '../actions'
+import { togglePackageActive, type PostType } from '../actions'
+import PackageFormDrawer from './PackageFormDrawer'
 
-type BonusVoucher = {
-  quantity: number
-  discountValue: number
-  appliedFor: 'normal' | 'vip' | 'special'
-}
-
-type Package = {
+export type PackageItem = {
   id: string | number
   name: string
   subtitle?: string | null
   description?: string | null
   price: number
   originalPrice?: number | null
+  durationOptions?: {
+    id?: string | null
+    months: number
+    price: number
+    originalPrice?: number | null
+    discount?: number | null
+    savePerMonth?: number | null
+    totalProperties?: number | null
+  }[]
   totalProperties: number
   durationDays: number
   propertyDurationDays: number
-  postType: 'normal' | 'vip'
-  isBestSeller: boolean
-  isActive: boolean
-  sort: number
-  features?: { feature: string }[]
-  bonusVouchers?: BonusVoucher[]
+  postType?: PostType | null
+  isBestSeller?: boolean | null
+  isActive?: boolean | null
+  sort?: number | null
+  features?: { id?: string | null; feature?: string | null }[]
+  bonusVouchers?: {
+    id?: string | null
+    quantity?: number | null
+    discountValue?: number | null
+    appliedFor?: string | null
+  }[]
 }
 
-const appliedForLabel = (v: string) => {
-  if (v === 'vip') return 'Tin VIP'
-  if (v === 'special') return 'Tin đặc biệt'
-  return 'Tin thường'
+const POST_TYPE_CONFIG: Record<PostType, { label: string; bg: string; text: string }> = {
+  normal: { label: 'Tin thường', bg: 'bg-sky-100', text: 'text-sky-700' },
+  silver: { label: 'VIP Bạc', bg: 'bg-slate-200', text: 'text-slate-700' },
+  gold: { label: 'VIP Vàng', bg: 'bg-amber-100', text: 'text-amber-700' },
+  diamond: { label: 'VIP Kim cương', bg: 'bg-cyan-100', text: 'text-cyan-700' },
 }
 
-function PackageCard({ pkg }: { pkg: Package }) {
+const appliedForLabel = (v?: string | null) =>
+  POST_TYPE_CONFIG[(v as PostType) ?? 'normal']?.label ?? v ?? '-'
+
+function PackageCard({
+  pkg,
+  onEdit,
+}: {
+  pkg: PackageItem
+  onEdit: (pkg: PackageItem) => void
+}) {
   const [pending, startTransition] = useTransition()
+  const postTypeCfg = POST_TYPE_CONFIG[pkg.postType ?? 'normal']
 
   const handleToggle = () => {
     startTransition(() => togglePackageActive(pkg.id, !pkg.isActive))
@@ -49,10 +69,13 @@ function PackageCard({ pkg }: { pkg: Package }) {
   return (
     <div
       className={`bg-white rounded-xl border-2 relative overflow-hidden flex flex-col transition-all ${
-        !pkg.isActive ? 'opacity-55 border-slate-100' : pkg.isBestSeller ? 'border-amber-300' : 'border-slate-200'
+        !pkg.isActive
+          ? 'opacity-55 border-slate-100'
+          : pkg.isBestSeller
+            ? 'border-amber-300'
+            : 'border-slate-200'
       }`}
     >
-      {/* Best seller ribbon */}
       {pkg.isBestSeller && (
         <div className="absolute top-3 -right-8 bg-amber-400 text-white text-[10px] font-bold px-10 py-0.5 rotate-45">
           BÁN CHẠY
@@ -67,17 +90,11 @@ function PackageCard({ pkg }: { pkg: Package }) {
             {pkg.subtitle && <p className="text-xs text-slate-500 mt-0.5">{pkg.subtitle}</p>}
           </div>
           <span
-            className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wide ${
-              pkg.postType === 'vip'
-                ? 'bg-purple-100 text-purple-700'
-                : 'bg-sky-100 text-sky-700'
-            }`}
+            className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wide ${postTypeCfg.bg} ${postTypeCfg.text}`}
           >
-            {pkg.postType === 'vip' ? 'VIP' : 'Thường'}
+            {postTypeCfg.label}
           </span>
         </div>
-
-        {/* Price */}
         <div className="mt-3 flex items-baseline gap-2">
           <span className="text-2xl font-extrabold text-amber-600">{formatVND(pkg.price)}</span>
           {pkg.originalPrice && pkg.originalPrice > pkg.price && (
@@ -106,6 +123,26 @@ function PackageCard({ pkg }: { pkg: Package }) {
           <div className="text-[10px] text-slate-400 mt-0.5">ngày/tin</div>
         </div>
       </div>
+
+      {/* Duration options */}
+      {pkg.durationOptions && pkg.durationOptions.length > 0 && (
+        <div className="px-5 py-3 border-b border-slate-100">
+          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-2">
+            Tuỳ chọn thời hạn
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {pkg.durationOptions.map((opt, i) => (
+              <div key={i} className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs text-center">
+                <div className="font-semibold text-slate-700">{opt.months} tháng</div>
+                <div className="text-amber-600 font-bold">{formatVND(opt.price)}</div>
+                {opt.discount ? (
+                  <div className="text-rose-500 text-[10px]">-{opt.discount}%</div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Features */}
       {pkg.features && pkg.features.length > 0 && (
@@ -138,7 +175,7 @@ function PackageCard({ pkg }: { pkg: Package }) {
               {pkg.bonusVouchers.map((v, i) => (
                 <li key={i} className="text-xs text-amber-700">
                   {v.quantity}x giảm{' '}
-                  <span className="font-semibold">{formatVND(v.discountValue)}</span>{' '}
+                  <span className="font-semibold">{formatVND(v.discountValue ?? 0)}</span>{' '}
                   <span className="text-amber-500">({appliedForLabel(v.appliedFor)})</span>
                 </li>
               ))}
@@ -148,7 +185,7 @@ function PackageCard({ pkg }: { pkg: Package }) {
       )}
 
       {/* Actions */}
-      <div className="px-5 py-3 flex items-center justify-between gap-2">
+      <div className="px-5 py-3 flex items-center justify-between gap-2 mt-auto">
         <button
           onClick={handleToggle}
           disabled={pending}
@@ -163,23 +200,24 @@ function PackageCard({ pkg }: { pkg: Package }) {
           </span>
           {pkg.isActive ? 'Đang hiển thị' : 'Đã ẩn'}
         </button>
-
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400">#{pkg.sort}</span>
-          <a
-            href={`/admin/collections/packages/${pkg.id}`}
+          <span className="text-xs text-slate-400">#{pkg.sort ?? 0}</span>
+          <button
+            onClick={() => onEdit(pkg)}
             className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium transition-colors"
           >
             <span className="material-symbols-outlined text-[14px]">edit</span>
             Chỉnh sửa
-          </a>
+          </button>
         </div>
       </div>
     </div>
   )
 }
 
-export default function PackagesSection({ packages }: { packages: Package[] }) {
+export default function PackagesSection({ packages }: { packages: PackageItem[] }) {
+  const [drawerPkg, setDrawerPkg] = useState<PackageItem | null | 'new'>(null)
+
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
@@ -188,13 +226,13 @@ export default function PackagesSection({ packages }: { packages: Package[] }) {
           Gói đăng tin
           <span className="ml-1 text-sm font-normal text-slate-400">({packages.length} gói)</span>
         </h2>
-        <a
-          href="/admin/collections/packages/create"
+        <button
+          onClick={() => setDrawerPkg('new')}
           className="flex items-center gap-1.5 text-sm text-amber-600 hover:text-amber-700 font-medium transition-colors"
         >
           <span className="material-symbols-outlined text-[16px]">add_circle</span>
           Thêm gói mới
-        </a>
+        </button>
       </div>
 
       {packages.length === 0 ? (
@@ -202,17 +240,27 @@ export default function PackagesSection({ packages }: { packages: Package[] }) {
           <span className="material-symbols-outlined text-slate-300 text-[48px]">workspace_premium</span>
           <p className="mt-2 text-sm text-slate-400">
             Chưa có gói nào.{' '}
-            <a href="/admin/collections/packages/create" className="text-amber-500 hover:underline">
+            <button
+              onClick={() => setDrawerPkg('new')}
+              className="text-amber-500 hover:underline"
+            >
               Thêm gói đầu tiên
-            </a>
+            </button>
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {packages.map((pkg) => (
-            <PackageCard key={pkg.id} pkg={pkg} />
+            <PackageCard key={pkg.id} pkg={pkg} onEdit={setDrawerPkg} />
           ))}
         </div>
+      )}
+
+      {drawerPkg !== null && (
+        <PackageFormDrawer
+          pkg={drawerPkg === 'new' ? null : drawerPkg}
+          onClose={() => setDrawerPkg(null)}
+        />
       )}
     </section>
   )
