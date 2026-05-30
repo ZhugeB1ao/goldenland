@@ -32,22 +32,11 @@ export default async function GoiPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Gói & Bảng giá</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Quản lý gói đăng tin và bảng giá đơn lẻ
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <a
-            href="/admin/collections/packages/create"
-            className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors"
-          >
-            <span className="material-symbols-outlined text-[18px]">add</span>
-            Thêm gói mới
-          </a>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900">Gói & Bảng giá</h1>
+        <p className="text-sm text-slate-500 mt-1">
+          Quản lý gói đăng tin và bảng giá đăng tin lẻ
+        </p>
       </div>
 
       {/* Summary KPIs */}
@@ -63,14 +52,14 @@ export default async function GoiPage() {
 
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <div className="flex items-center gap-2 mb-1">
-            <span className="material-symbols-outlined text-purple-500 text-[20px]">star</span>
-            <span className="text-xs text-slate-500">Gói VIP</span>
+            <span className="material-symbols-outlined text-purple-500 text-[20px]">diamond</span>
+            <span className="text-xs text-slate-500">Gói premium</span>
           </div>
           <div className="text-2xl font-bold text-slate-900">
-            {packagesResult.docs.filter((p) => p.postType === 'vip').length}
+            {packagesResult.docs.filter((p) => p.postType !== 'normal').length}
           </div>
           <div className="text-xs text-slate-400 mt-0.5">
-            {packagesResult.docs.filter((p) => p.postType === 'normal').length} tin thường
+            {packagesResult.docs.filter((p) => p.postType === 'normal').length} gói tin thường
           </div>
         </div>
 
