@@ -4,7 +4,7 @@ export const SEARCH_HISTORY_STORAGE_KEY = 'goldenland.heroSearchHistory'
 export const MAX_SEARCH_HISTORY_ITEMS = 12
 export const SEARCH_HISTORY_TTL_MS = 1000 * 60 * 60 * 24 * 30
 export const SEARCH_TAG_PROMOTION_COUNT = 2
-export const SEARCH_TABS: SearchTab[] = ['all', 'property', 'project', 'news']
+export const SEARCH_TABS: SearchTab[] = ['property', 'project', 'news']
 export const MAX_SUGGESTION_FRAGMENT_TOKENS = 4
 
 // Regexes to parse structured filters from the free-text input.

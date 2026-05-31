@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useDispatch, useSelector } from 'react-redux'
 import type { Property } from '@/payload-types'
@@ -169,7 +169,7 @@ const buildPriceRanges = (
   return labels
 }
 
-export default function PropertiesPage() {
+function PropertiesPageInner() {
   const searchParams = useSearchParams()
   const dispatch = useDispatch<AppDispatch>()
   const sharedSearch = useSelector(selectPropertySearch)
@@ -679,5 +679,13 @@ export default function PropertiesPage() {
         />
       </div>
     </main>
+  )
+}
+
+export default function PropertiesPage() {
+  return (
+    <Suspense>
+      <PropertiesPageInner />
+    </Suspense>
   )
 }

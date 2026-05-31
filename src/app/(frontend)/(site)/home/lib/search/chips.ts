@@ -10,8 +10,6 @@ import {
 } from './constants'
 import { compactWhitespace, normalize, removeAliasTokens } from './text'
 
-// Legacy utility: Home search UI no longer renders chips in the new flow.
-// Kept temporarily for backward compatibility with older search UI variants.
 // Remove one displayed chip from the raw search input.
 export function removeSearchTokenByChip(input: string, chip: SearchChip): string {
   if (chip.key === 'keyword') {
@@ -53,7 +51,6 @@ export function removeSearchTokenByChip(input: string, chip: SearchChip): string
   )
 }
 
-// Legacy utility: Home search UI no longer renders tag suggestions in the new flow.
 // Apply a suggestion by replacing the matching input fragment.
 export function applySearchTagSuggestion(input: string, suggestion: SearchTagSuggestion): string {
   const compactInput = compactWhitespace(input)

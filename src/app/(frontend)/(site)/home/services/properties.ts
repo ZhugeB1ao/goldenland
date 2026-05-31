@@ -30,10 +30,6 @@ type SearchPropertiesResponse = {
   }
 }
 
-export type PropertiesResponse = {
-  properties: Property[]
-}
-
 export type PropertyDetailResponse = {
   property: Property
 }
@@ -58,10 +54,6 @@ export type PropertyFilterOptionsResponse = {
   areaRange: { min: number | null; max: number | null }
 }
 
-// Exporting list of properties, limit to 100 properties.
-export async function fetchProperties(config?: AxiosRequestConfig): Promise<PropertiesResponse> {
-  return getJSON<PropertiesResponse>('/api/properties', config)
-}
 // Exporting property detail by id.
 export async function fetchPropertyDetail(id: string, config?: AxiosRequestConfig): Promise<PropertyDetailResponse> {
   const query = buildQuery({
