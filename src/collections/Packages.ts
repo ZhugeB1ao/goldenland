@@ -78,11 +78,7 @@ export const Packages: CollectionConfig = {
                     min: 0,
                     admin: { description: 'Giá gốc trước khi giảm (VNĐ)' },
                 },
-                {
-                    name: 'totalProperties',
-                    type: 'number',
-                    admin: { description: 'Số lượt đăng tin riêng cho mốc này (nếu trống sẽ dùng giá trị mặc định ở ngoài)' }
-                },
+
                 {
                     name: 'discount',
                     type: 'number',
@@ -99,23 +95,11 @@ export const Packages: CollectionConfig = {
             ],
         },
         {
-            type: 'row',
-            fields: [
-                {
-                    name: 'totalProperties',
-                    type: 'number',
-                    required: true,
-                    min: 1,
-                    admin: { description: 'Số lượt đăng tin' },
-                },
-                {
-                    name: 'durationDays',
-                    type: 'number',
-                    required: true,
-                    min: 1,
-                    admin: { description: 'Thời hạn gói (ngày)' },
-                },
-            ],
+            name: 'durationDays',
+            type: 'number',
+            required: true,
+            min: 1,
+            admin: { description: 'Thời hạn gói (ngày)' },
         },
         {
             name: 'propertyDurationDays',

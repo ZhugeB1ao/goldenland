@@ -93,14 +93,39 @@ export const Users: CollectionConfig = {
         description: 'Ngày hết hạn gói Membership',
       },
     },
+
     {
-      name: 'availableListings',
-      type: 'number',
-      defaultValue: 0,
-      min: 0,
+      name: 'availableVouchers',
+      type: 'array',
       admin: {
-        description: 'Số lượt đăng tin còn lại',
+        description: 'Các voucher user đang có (được tặng từ gói)',
       },
+      fields: [
+        {
+          name: 'quantity',
+          type: 'number',
+          min: 0,
+          defaultValue: 0,
+          admin: { description: 'Số lượng voucher còn lại' },
+        },
+        {
+          name: 'discountValue',
+          type: 'number',
+          min: 0,
+          admin: { description: 'Giá trị giảm giá (VNĐ)' },
+        },
+        {
+          name: 'appliedFor',
+          type: 'select',
+          options: [
+            { label: 'Tin thường', value: 'normal' },
+            { label: 'VIP bạc', value: 'silver' },
+            { label: 'VIP vàng', value: 'gold' },
+            { label: 'VIP kim cương', value: 'diamond' },
+          ],
+          admin: { description: 'Loại tin được áp dụng' },
+        },
+      ],
     },
 
     // --- Trạng thái ---

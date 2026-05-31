@@ -35,7 +35,6 @@ export const purchasePackage: Endpoint = {
 
             let originalAmount = pkg.price as number
             let durationDays = pkg.durationDays as number
-            let availableListingsGrant = pkg.totalProperties as number
 
             if (pkg.durationOptions && pkg.durationOptions.length > 0) {
                 if (!selectedMonths) {
@@ -47,10 +46,6 @@ export const purchasePackage: Endpoint = {
                 }
                 originalAmount = option.price
                 durationDays = option.months * 30
-                // Nếu option có cấu hình số lượt đăng tin riêng, sử dụng nó
-                if (option.totalProperties) {
-                    availableListingsGrant = option.totalProperties
-                }
             }
 
             const promotionResult =
@@ -152,16 +147,35 @@ export const purchasePackage: Endpoint = {
             const newExpiresAt = new Date()
             newExpiresAt.setDate(newExpiresAt.getDate() + (durationDays as number))
 
+            // Tính toán vouchers mới để cộng dồn
+            let currentVouchers = Array.isArray(user.availableVouchers) ? [...user.availableVouchers] : []
+
+            if (pkg.bonusVouchers && pkg.bonusVouchers.length > 0) {
+                for (const bonus of pkg.bonusVouchers) {
+                    const existingIndex = currentVouchers.findIndex(
+                        (v: any) => v.discountValue === bonus.discountValue && v.appliedFor === bonus.appliedFor
+                    )
+
+                    if (existingIndex > -1) {
+                        currentVouchers[existingIndex].quantity += (bonus.quantity || 1)
+                    } else {
+                        currentVouchers.push({
+                            quantity: bonus.quantity || 1,
+                            discountValue: bonus.discountValue || 0,
+                            appliedFor: bonus.appliedFor,
+                        })
+                    }
+                }
+            }
+
             await payload.update({
                 collection: 'users',
                 id: user.id,
                 data: {
                     balance: currentBalance - totalAmount,
                     activePackage: packageId,
-                    availableListings:
-                        (user.availableListings || 0) +
-                        availableListingsGrant,
                     packageExpiresAt: newExpiresAt.toISOString(),
+                    availableVouchers: currentVouchers,
                 },
                 overrideAccess: false,
                 req,
@@ -181,61 +195,7 @@ export const purchasePackage: Endpoint = {
                 })
             }
 
-            // 7. Tạo voucher tặng kèm (nếu gói có)
-            if (
-                pkg.bonusVouchers &&
-                pkg.bonusVouchers.length > 0
-                ) {
-                for (const bonus of pkg.bonusVouchers) {
-                    const quantity = bonus.quantity || 1
-
-                    for (let i = 0; i < quantity; i++) {
-                    const code =
-                        `BONUS-${Date.now()
-                        .toString(36)
-                        .toUpperCase()}-${Math.random()
-                        .toString(36)
-                        .substring(2, 5)
-                        .toUpperCase()}`
-
-                    const expiresAt = new Date()
-
-                    expiresAt.setDate(
-                        expiresAt.getDate() +
-                        durationDays,
-                    )
-
-                    await payload.create({
-                        collection: 'vouchers',
-
-                        data: {
-                        code,
-
-                        user: user.id,
-
-                        discountType: 'fixed',
-
-                        discountValue:
-                            bonus.discountValue || 0,
-
-                        status: 'active',
-
-                        expiresAt:
-                            expiresAt.toISOString(),
-
-                        source: 'package',
-
-                        appliedFor:
-                            bonus.appliedFor,
-                        },
-
-                        overrideAccess: false,
-
-                        req,
-                    })
-                    }
-                }
-                }
+            // 7. Voucher đã được cập nhật trực tiếp vào user.availableVouchers
 
             return Response.json({
                 success: true,

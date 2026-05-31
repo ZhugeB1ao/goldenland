@@ -183,9 +183,25 @@ export interface User {
    */
   packageExpiresAt?: string | null;
   /**
-   * Số lượt đăng tin còn lại
+   * Các voucher user đang có (được tặng từ gói)
    */
-  availableListings?: number | null;
+  availableVouchers?:
+    | {
+        /**
+         * Số lượng voucher còn lại
+         */
+        quantity?: number | null;
+        /**
+         * Giá trị giảm giá (VNĐ)
+         */
+        discountValue?: number | null;
+        /**
+         * Loại tin được áp dụng
+         */
+        appliedFor?: ('normal' | 'silver' | 'gold' | 'diamond') | null;
+        id?: string | null;
+      }[]
+    | null;
   isVerified?: boolean | null;
   isActive?: boolean | null;
   verificationToken?: string | null;
@@ -253,10 +269,6 @@ export interface Package {
          */
         originalPrice?: number | null;
         /**
-         * Số lượt đăng tin riêng cho mốc này (nếu trống sẽ dùng giá trị mặc định ở ngoài)
-         */
-        totalProperties?: number | null;
-        /**
          * Phần trăm giảm giá (%)
          */
         discount?: number | null;
@@ -267,10 +279,6 @@ export interface Package {
         id?: string | null;
       }[]
     | null;
-  /**
-   * Số lượt đăng tin
-   */
-  totalProperties: number;
   /**
    * Thời hạn gói (ngày)
    */
@@ -1116,7 +1124,14 @@ export interface UsersSelect<T extends boolean = true> {
   balance?: T;
   activePackage?: T;
   packageExpiresAt?: T;
-  availableListings?: T;
+  availableVouchers?:
+    | T
+    | {
+        quantity?: T;
+        discountValue?: T;
+        appliedFor?: T;
+        id?: T;
+      };
   isVerified?: T;
   isActive?: T;
   verificationToken?: T;
@@ -1389,12 +1404,10 @@ export interface PackagesSelect<T extends boolean = true> {
         months?: T;
         price?: T;
         originalPrice?: T;
-        totalProperties?: T;
         discount?: T;
         savePerMonth?: T;
         id?: T;
       };
-  totalProperties?: T;
   durationDays?: T;
   propertyDurationDays?: T;
   bonusVouchers?:
