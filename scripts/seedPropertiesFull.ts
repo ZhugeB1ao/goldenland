@@ -160,7 +160,6 @@ async function seed() {
       propertyType = getRandomItem(projectTypes)
     }
 
-    const listingType = 'sale'
     const loc = getRandomItem(LOCATIONS)
     const houseNumber = getRandomInt(1, 200)
     const titleBase = getRandomItem(TITLES)
@@ -186,8 +185,7 @@ async function seed() {
           title,
           slug,
           description,
-          listingType,
-          postType: getRandomBoolean() ? 'normal' : 'vip',
+          postType: getRandomBoolean() ? 'normal' : 'diamond',
           price,
           priceUnit,
           propertyType: propertyType as any,
@@ -213,7 +211,6 @@ async function seed() {
 
           // STATUS & VERIFICATION
           status: 'active',
-          label: getRandomItem(['normal', 'vip', 'hot', 'premium']) as any,
           isVerified,
           verifiedBy: isVerified ? getRandomItem(userIds) : undefined,
           verifiedAt: isVerified ? new Date(Date.now() - getRandomInt(1, 10) * 86400000).toISOString() : undefined,

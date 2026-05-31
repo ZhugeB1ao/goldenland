@@ -8,6 +8,7 @@ export default function PricingCard({ pkg }: { pkg: any }) {
   // 1. Thêm State để làm nút loading
   const [loading, setLoading] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [promotionId, setPromotionId] = useState<string>('')
   // BẠN GIỮ NGUYÊN PHẦN TÍNH TOÁN CỦA BẠN:
   let discountPercentage = 0
   let savings = 0
@@ -17,14 +18,18 @@ export default function PricingCard({ pkg }: { pkg: any }) {
   }
   // 2. THÊM HÀM XỬ LÝ MUA GÓI VÀO ĐÂY:
   // Xóa hàm handlePurchase cũ đi và thay bằng hàm này:
-  const handleConfirmPurchase = async () => {
+  const handleConfirmPurchase = async (months: number) => {
     setLoading(true)
     try {
-      // Gọi API mua như cũ
+      // Gọi API mua với thời hạn được chọn
       const res = await fetch('/api/purchase-package', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packageId: pkg.id }),
+        body: JSON.stringify({
+          packageId: pkg.id,
+          selectedMonths: months,
+          promotionId: promotionId || undefined,
+        }),
       })
       const data = await res.json()
 
@@ -115,8 +120,12 @@ export default function PricingCard({ pkg }: { pkg: any }) {
                     <span className="font-medium">{formatMoney(v.discountValue)}</span> mỗi lần{' '}
                     {v.appliedFor === 'normal'
                       ? 'đăng Tin Thường'
-                      : v.appliedFor === 'vip'
-                        ? 'đăng Tin VIP'
+                      : v.appliedFor === 'silver'
+                        ? 'đăng VIP bạc'
+                        : v.appliedFor === 'gold'
+                          ? 'đăng VIP vàng'
+                          : v.appliedFor === 'diamond'
+                            ? 'đăng VIP kim cương'
                         : 'đăng tin'}
                   </p>
                 </div>
@@ -155,6 +164,8 @@ export default function PricingCard({ pkg }: { pkg: any }) {
         onClose={() => setIsModalOpen(false)}
         pkg={pkg}
         handleConfirmPurchase={handleConfirmPurchase}
+        promotionId={promotionId}
+        onPromotionIdChange={setPromotionId}
         loading={loading}
       />
     </div> // Đây là thẻ div đóng của PricingCard

@@ -1,16 +1,15 @@
 import type { Project, Property } from '@/payload-types'
-import { FALLBACK_IMAGE, formatLocation, formatPrice } from '../lib/utils'
-import config from '@payload-config'
-import { getPayload } from 'payload'
+import { FALLBACK_IMAGE, formatLocation, formatLocationByCodes, formatPrice } from '../lib/utils'
 import { notFound } from 'next/navigation'
 import { Breadcrumb, HeaderActions, LocationLine, PropertyStats } from './components/DetailHeader'
 import { PropertyGallery } from './components/PropertyGallery'
 import {
-  DescriptionSection,
-  FeaturesSection,
-  MapSection,
-  MetaInfo,
-  ProjectSection,
+    DescriptionSection,
+    FeaturesSection,
+    MapSection,
+    MapSectionFallback,
+    MetaInfo,
+    ProjectSection,
   type FeatureItem,
   type MetaItem,
 } from './components/DetailSections'
@@ -18,6 +17,7 @@ import { ForYouSection } from './components/ForYouSection'
 import { FavoriteActionButton } from './components/FavoriteActionButton'
 import type { PropertyItem } from '../../components/PropertyGridItem'
 import { fetchForYouProperties } from '../services/properties'
+import { fetchPropertyDetailData } from './services/propertyDetail'
 
 type PageProps = {
   params: Promise<{
@@ -91,14 +91,11 @@ const FURNITURE_STATUS_LABELS: Record<string, string> = {
   none: 'Không nội thất',
 }
 
-const LISTING_TYPE_LABELS: Record<string, string> = {
-  sale: 'Bán',
-  rent: 'Cho thuê',
-}
-
 const POST_TYPE_LABELS: Record<string, string> = {
   normal: 'Tin thường',
-  vip: 'Tin VIP',
+  silver: 'VIP bạc',
+  gold: 'VIP vàng',
+  diamond: 'VIP kim cương',
 }
 
 const PROJECT_SALE_STATUS_LABELS: Record<string, string> = {
@@ -117,7 +114,7 @@ function buildFeatureItems(property: Property): FeatureItem[] {
     items.push({ label, value: text, icon })
   }
 
-  pushItem('Loại giao dịch', LISTING_TYPE_LABELS[property.listingType], 'sell')
+  pushItem('Loại giao dịch', 'Bán', 'sell')
   pushItem('Loại bất động sản', PROPERTY_TYPE_LABELS[property.propertyType], 'home_work')
   pushItem('Diện tích', property.area ? `${property.area} m²` : null, 'aspect_ratio')
   pushItem('Phòng ngủ', property.bedrooms, 'bed')
@@ -162,7 +159,11 @@ function buildProjectInfo(project: Project): FeatureItem[] {
     project.investor && typeof project.investor === 'object' ? project.investor.name : null,
     'apartment',
   )
-  pushItem('Địa chỉ', project.address, 'location_on')
+  pushItem(
+    'Khu vực',
+    formatLocationByCodes({ provinceCode: project.provinceCode, wardCode: project.wardCode }),
+    'location_on',
+  )
   pushItem('Tổng diện tích', project.totalArea ? `${project.totalArea} ha` : null, 'square_foot')
   pushItem('Tổng số căn/lô', project.totalUnits, 'home')
   pushItem('Giá', priceRange, 'payments')
@@ -192,43 +193,9 @@ export default async function PropertyDetailPage({ params }: PageProps) {
     | undefined
 
   try {
-    const payload = await getPayload({ config })
-    const foundProperty = await payload.findByID({
-      collection: 'properties',
-      id,
-      depth: 2,
-      overrideAccess: false,
-    })
-
-    property = foundProperty
-
-    const userId =
-      typeof foundProperty.user === 'object' && foundProperty.user
-        ? foundProperty.user.id
-        : foundProperty.user
-
-    if (userId) {
-      const user = await payload.findByID({
-        collection: 'users',
-        id: String(userId),
-        depth: 0,
-        // Intentional: property detail sidebar needs public contact info.
-        overrideAccess: true,
-        select: {
-          fullName: true,
-          phone: true,
-          avatar_id: true,
-          email: true,
-        },
-      })
-
-      sidebarUser = {
-        fullName: user.fullName,
-        phone: user.phone,
-        avatar_id: user.avatar_id,
-        email: user.email,
-      }
-    }
+    const detailData = await fetchPropertyDetailData(id)
+    property = detailData.property
+    sidebarUser = detailData.sidebarUser
   } catch {
     notFound()
   }
@@ -261,6 +228,20 @@ export default async function PropertyDetailPage({ params }: PageProps) {
   ]
 
   const project = typeof property.project === 'object' ? property.project : null
+  const mapCoordinates = (() => {
+    if (project) {
+      if (typeof project.latitude === 'number' && typeof project.longitude === 'number') {
+        return { lat: project.latitude, lng: project.longitude }
+      }
+      return null
+    }
+
+    if (typeof property.latitude === 'number' && typeof property.longitude === 'number') {
+      return { lat: property.latitude, lng: property.longitude }
+    }
+
+    return null
+  })()
   const projectItems = project ? buildProjectInfo(project) : []
   const projectTitle = project ? getProjectTitle(project) : ''
   const forYouProperties = await fetchForYouProperties(property)
@@ -292,7 +273,7 @@ export default async function PropertyDetailPage({ params }: PageProps) {
   )
 
   return (
-    <main className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+    <main className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
       <Breadcrumb title={property.title} />
       <HeaderActions title={property.title} actions={headerActions} />
       <LocationLine locationText={locationText} />
@@ -308,7 +289,16 @@ export default async function PropertyDetailPage({ params }: PageProps) {
         <div className="lg:col-span-2 space-y-12">
           <DescriptionSection description={property.description} />
           <FeaturesSection items={featureItems} />
-          <MapSection locationText={locationText} />
+          {mapCoordinates ? (
+            <MapSection
+              locationText={locationText}
+              lat={mapCoordinates.lat}
+              lng={mapCoordinates.lng}
+              label={property.title}
+            />
+          ) : (
+            <MapSectionFallback locationText={locationText} />
+          )}
           <MetaInfo items={metaItems} />
           <ForYouSection properties={forYouProperties} />
           {project && <ProjectSection title={projectTitle} items={projectItems} />}

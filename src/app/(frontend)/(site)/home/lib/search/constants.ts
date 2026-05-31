@@ -20,7 +20,6 @@ export const AREA_SINGLE_PARSE_RE =
 export const PRICE_RANGE_PARSE_RE =
   /(?:\btu\b\s*)?(\d+(?:[.,]\d+)?)\s*(ty|t|trieu|tr|m|billion|million)\s*(?:-|–|—|den|toi|toi da|~)\s*(\d+(?:[.,]\d+)?)\s*(ty|t|trieu|tr|m|billion|million)?/i
 export const PRICE_SINGLE_PARSE_RE = /(\d+(?:[.,]\d+)?)\s*(ty|t|trieu|tr|m|billion|million)\b/i
-export const LISTING_TYPE_PARSE_RE = /\b(?:ban|mua\s*ban|cho\s*thue|thue)\b/i
 export const PROPERTY_TYPE_PARSE_RE =
   /\b(?:nha\s*rieng|nha\s*pho|chung\s*cu|can\s*ho|dat\s*nen|biet\s*thu|shophouse|penthouse|condotel|kho|xuong|mat\s*bang)\b/i
 export const DIRECTION_PARSE_RE =
@@ -29,7 +28,8 @@ export const LEGAL_STATUS_PARSE_RE =
   /\b(?:so\s*do|so\s*hong|hdmb|hop\s*dong\s*mua\s*ban|dang\s*cho\s*so|cho\s*so)\b/i
 export const FURNITURE_STATUS_PARSE_RE =
   /\b(?:noi\s*that\s*cao\s*cap|full\s*noi\s*that|noi\s*that\s*day\s*du|noi\s*that\s*co\s*ban|khong\s*noi\s*that|nha\s*trong)\b/i
-export const POST_TYPE_PARSE_RE = /\b(?:vip|tin\s*vip)\b/i
+export const POST_TYPE_PARSE_RE =
+  /\b(?:vip\s*(?:bac|bạc|vang|vàng|kim\s*cuong|kim\s*cương)?|tin\s*vip\s*(?:bac|bạc|vang|vàng|kim\s*cuong|kim\s*cương)?)\b/i
 
 // Regexes to strip parsed tokens so keyword search stays clean.
 export const DISTRICT_REMOVE_RE = /\b(?:q\.?|dist(?:rict)?\.?|quận|quan\.?(?:[sfrxj])?)\s*\d{1,2}\b/giu
@@ -45,7 +45,6 @@ export const PRICE_RANGE_REMOVE_RE =
   /(?:\btu\b\s*)?\d+(?:[.,]\d+)?\s*(?:ty|tỷ|t|trieu|triệu|tr|m|billion|million)\s*(?:-|–|—|đến|den|toi|tới|toi da|tối đa|~)\s*\d+(?:[.,]\d+)?\s*(?:ty|tỷ|t|trieu|triệu|tr|m|billion|million)?/giu
 export const PRICE_SINGLE_REMOVE_RE =
   /\d+(?:[.,]\d+)?\s*(?:ty|tỷ|t|trieu|triệu|tr|m|billion|million)\b/giu
-export const LISTING_TYPE_REMOVE_RE = /\b(?:ban|mua\s*ban|cho\s*thue|thue)\b/giu
 export const PROPERTY_TYPE_REMOVE_RE =
   /\b(?:nha\s*rieng|nha\s*pho|chung\s*cu|can\s*ho|dat\s*nen|biet\s*thu|shophouse|penthouse|condotel|kho|xuong|mat\s*bang)\b/giu
 export const DIRECTION_REMOVE_RE =
@@ -54,4 +53,5 @@ export const LEGAL_STATUS_REMOVE_RE =
   /\b(?:so\s*do|so\s*hong|hdmb|hop\s*dong\s*mua\s*ban|dang\s*cho\s*so|cho\s*so)\b/giu
 export const FURNITURE_STATUS_REMOVE_RE =
   /\b(?:noi\s*that\s*cao\s*cap|full\s*noi\s*that|noi\s*that\s*day\s*du|noi\s*that\s*co\s*ban|khong\s*noi\s*that|nha\s*trong)\b/giu
-export const POST_TYPE_REMOVE_RE = /\b(?:vip|tin\s*vip)\b/giu
+export const POST_TYPE_REMOVE_RE =
+  /\b(?:vip\s*(?:bac|bạc|vang|vàng|kim\s*cuong|kim\s*cương)?|tin\s*vip\s*(?:bac|bạc|vang|vàng|kim\s*cuong|kim\s*cương)?)\b/giu

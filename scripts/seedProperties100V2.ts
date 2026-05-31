@@ -281,8 +281,6 @@ async function seed() {
       propertyType = getRandomItem(projectTypes)
     }
 
-    const listingType = 'sale'
-    
     const price = getRandomInt(1, 20) * 1000000000
     const priceUnit = 'total' as const
 
@@ -329,7 +327,6 @@ async function seed() {
         data: {
           title: realisticTitle,
           description,
-          listingType,
           propertyType,
           price,
           priceUnit,
@@ -348,8 +345,7 @@ async function seed() {
           user: userId,
           project: projectId,
           status: 'active',
-          postType: i % 10 === 0 ? 'vip' : 'normal',
-          label: getRandomItem(['normal', 'vip', 'hot', 'premium']),
+          postType: i % 10 === 0 ? 'diamond' : 'normal',
           isVerified,
           verifiedBy: isVerified ? getRandomInt(1, 2) : undefined,
           verifiedAt: isVerified ? new Date().toISOString() : undefined,

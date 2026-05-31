@@ -25,10 +25,12 @@ import { Notifications } from './collections/Notifications'
 import { Favorites } from './collections/Favorites'
 import { ViewHistory } from './collections/ViewHistory'
 import { SpamBlacklist } from './collections/SpamBlacklist'
+import { Promotions } from './collections/Promotions'
 
 import { Settings } from './app/globals/Settings'
 
 import { divisionEndpoints } from './endpoints/divisions'
+import { calculatePackagePrice } from './endpoints/calculatePackagePrice'
 import { purchasePackage } from './endpoints/purchasePackage'
 import { topUp } from './endpoints/topUp'
 import { payosWebhook } from './endpoints/payosWebhook'
@@ -54,6 +56,7 @@ import { myDashboard } from './endpoints/myDashboard'
 import { meProfile } from './endpoints/me'
 import { projectDetail, projects } from './endpoints/projects'
 import { adminDashboardStats } from './endpoints/adminDashboard'
+import { submitProperty } from './endpoints/submitProperty'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -68,6 +71,7 @@ export default buildConfig({
   globals: [Settings],
   endpoints: [
     ...divisionEndpoints,
+    calculatePackagePrice,
     purchasePackage,
     topUp,
     payosWebhook,
@@ -87,12 +91,13 @@ export default buildConfig({
     countUnreadNotifications,
     myDashboard,
     meProfile,
+    submitProperty,
     projects,
     projectDetail,
     adminDashboardStats,
   ],
   collections: [Users, Profiles, Properties, Projects, Media, Investors, Articles, ArticleCategories, Banners, Contacts, Reports, Packages, PostingPrices, Vouchers, Orders,
-    Notifications, Favorites, ViewHistory, SpamBlacklist
+    Notifications, Favorites, ViewHistory, SpamBlacklist, Promotions
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
@@ -102,6 +107,9 @@ export default buildConfig({
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URL || '',
+      // Giới hạn pool để không vượt quá server limit (Neon/Supabase free = 15 sessions)
+      // Dành ít nhất 3 connection cho Payload Admin, còn lại cho app
+      max: 8,
       ssl: {
         rejectUnauthorized: false,
       },

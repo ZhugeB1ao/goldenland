@@ -7,7 +7,6 @@ import axios from 'axios'
 import {
   formatVND,
   formatDateTime,
-  listingTypeLabel,
   propertyStatusBadgeClass,
   propertyStatusLabel,
   propertyTypeLabel,
@@ -20,7 +19,6 @@ type PropertyItem = {
   id: string | number
   title: string
   status?: string
-  listingType?: string
   propertyType?: string
   price?: number
   priceUnit?: string
@@ -276,7 +274,7 @@ export default function PropertyApprovalTable({ items, page, totalPages, totalDo
                     </td>
                     <td className="px-3 py-3">
                       <div className="text-slate-700">{propertyTypeLabel(p.propertyType)}</div>
-                      <div className="text-xs text-slate-500">{listingTypeLabel(p.listingType)}</div>
+                      <div className="text-xs text-slate-500">Bán</div>
                     </td>
                     <td className="px-3 py-3 font-medium text-slate-800">
                       {formatVND(p.price)}

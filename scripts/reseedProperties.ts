@@ -98,9 +98,6 @@ async function seed() {
     const location = getRandomItem(LOCATIONS)
     const title = `${titlePrefix} tại ${location.street}, ${location.addressPrefix}`
     
-    // Always sale
-    const listingType = 'sale'
-    
     let price = 0
     let priceUnit: 'total' | 'per_m2' = 'total'
     price = getRandomInt(1, 30) * 1000000000 // 1 to 30 tỷ
@@ -131,9 +128,8 @@ async function seed() {
         data: {
           title,
           slug: uniqueSlug,
-          description: `Chính chủ cần ${listingType === 'sale' ? 'bán' : 'cho thuê'} gấp ${propertyType === 'apartment' ? 'căn hộ' : 'bất động sản'} tại ${location.street}, ${location.addressPrefix}. Diện tích ${area}m2, thiết kế hợp lý, công năng tối ưu. Vị trí đắc địa, giao thông thuận tiện. Gần trường học, bệnh viện, khu vui chơi giải trí. Khu dân cư văn minh, an ninh đảm bảo 24/7. Pháp lý rõ ràng, sẵn sàng giao dịch. Liên hệ ngay để xem nhà và thương lượng giá tốt nhất.`,
-          listingType,
-          postType: getRandomBoolean() ? 'normal' : 'vip',
+          description: `Chính chủ cần bán gấp ${propertyType === 'apartment' ? 'căn hộ' : 'bất động sản'} tại ${location.street}, ${location.addressPrefix}. Diện tích ${area}m2, thiết kế hợp lý, công năng tối ưu. Vị trí đắc địa, giao thông thuận tiện. Gần trường học, bệnh viện, khu vui chơi giải trí. Khu dân cư văn minh, an ninh đảm bảo 24/7. Pháp lý rõ ràng, sẵn sàng giao dịch. Liên hệ ngay để xem nhà và thương lượng giá tốt nhất.`,
+          postType: getRandomBoolean() ? 'normal' : 'diamond',
           price,
           priceUnit,
           propertyType: propertyType as any,
@@ -152,7 +148,6 @@ async function seed() {
           latitude: lat,
           longitude: lng,
           status: 'active',
-          label: getRandomItem(['normal', 'vip', 'hot', 'premium']) as any,
           user: userId,
           project: projectId,
           videoUrl: getRandomBoolean() ? 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' : undefined,

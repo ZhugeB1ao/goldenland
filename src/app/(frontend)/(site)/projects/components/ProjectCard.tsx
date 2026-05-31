@@ -1,10 +1,13 @@
 import Link from 'next/link'
 import { formatPrice, PROPERTY_TYPES } from '../utils'
+import { formatLocationByCodes } from '../../properties/lib/utils'
 
 type Project = {
     id: number
     name: string
-    address?: string
+    provinceCode?: string
+    wardCode?: string
+    street?: string
     priceFrom?: number
     priceTo?: number
     totalArea?: number
@@ -24,6 +27,11 @@ const STATUS_MAP: Record<string, { label: string; cls: string }> = {
 export default function ProjectCard({ project: p }: { project: Project }) {
     const imgUrl = p.thumbnail?.url || null
     const badge = p.saleStatus ? STATUS_MAP[p.saleStatus] : null
+    const locationText = formatLocationByCodes({
+        provinceCode: p.provinceCode,
+        wardCode: p.wardCode,
+        street: p.street,
+    })
 
     return (
         <Link
@@ -62,9 +70,7 @@ export default function ProjectCard({ project: p }: { project: Project }) {
                 <div className="text-base font-bold leading-snug text-gray-900 mb-1.5 line-clamp-2">
                     {p.name}
                 </div>
-                {p.address && (
-                    <div className="text-sm text-gray-500 mb-1 truncate">📍 {p.address}</div>
-                )}
+                <div className="text-sm text-gray-500 mb-1 truncate">📍 {locationText}</div>
                 {p.investor?.name && (
                     <div className="text-xs text-gray-400 mb-3">CĐT: {p.investor.name}</div>
                 )}

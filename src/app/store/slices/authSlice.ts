@@ -9,6 +9,8 @@ export type UserState = {
   fullName?: string | null
   phone?: string | null
   avatarUrl?: string | null
+  activePackage?: string | number | { id?: string | number } | null
+  active_package_id?: string | number | null
 }
 
 export type ProfileState = {

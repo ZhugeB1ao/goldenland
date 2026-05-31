@@ -9,6 +9,8 @@ export type SignInResponse = {
     fullName?: string
     phone?: string
     avatarUrl?: string
+    activePackage?: string | number | { id?: string | number } | null
+    active_package_id?: string | number | null
   }
 }
 

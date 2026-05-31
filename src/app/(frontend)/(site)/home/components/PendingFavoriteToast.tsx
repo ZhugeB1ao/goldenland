@@ -4,13 +4,13 @@ import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import type { Property } from '@/payload-types'
 import { fetchPropertyDetail } from '../services/properties'
-import divisions from '@/app/data/vietnam-divisions.json'
 import type { AppDispatch, RootState } from '@/app/store'
 import { selectIsLoggedIn } from '@/app/store/slices/authSlice'
 import {
   resolvePendingFavoriteThunk,
   selectPendingFavoriteIds,
 } from '@/app/store/slices/favoritesSlice'
+import { formatLocation } from '../../properties/lib/utils'
 
 const FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1400&q=80'
@@ -22,45 +22,6 @@ type PendingProperty = {
   location: string
   price: string
   area: string
-}
-
-type DivisionProvince = {
-  Code: string
-  FullName: string
-  Wards: Array<{
-    Code: string
-    FullName: string
-    ProvinceCode: string
-  }>
-}
-
-const divisionData = divisions as DivisionProvince[]
-
-const normalizeCode = (value: unknown): string => {
-  if (value === null || value === undefined) return ''
-
-  const raw = String(value).trim()
-  if (!raw) return ''
-
-  const trimmed = raw.replace(/^0+/, '')
-  return trimmed || '0'
-}
-
-const provinceNameByCode = new Map<string, string>()
-const wardNameByProvinceAndCode = new Map<string, string>()
-
-for (const province of divisionData) {
-  const provinceKey = normalizeCode(province.Code)
-  if (!provinceKey) continue
-
-  provinceNameByCode.set(provinceKey, province.FullName)
-
-  for (const ward of province.Wards) {
-    const wardKey = normalizeCode(ward.Code)
-    if (!wardKey) continue
-
-    wardNameByProvinceAndCode.set(`${provinceKey}:${wardKey}`, ward.FullName)
-  }
 }
 
 const formatPrice = (property: Property): string => {
@@ -91,20 +52,6 @@ const formatPrice = (property: Property): string => {
   }
 
   return amountStr
-}
-
-const formatLocation = (property: Property): string => {
-  const provinceKey = normalizeCode(property.provinceCode)
-  const wardKey = normalizeCode(property.wardCode)
-
-  const provinceName = provinceKey ? provinceNameByCode.get(provinceKey) : undefined
-  const wardName =
-    provinceKey && wardKey ? wardNameByProvinceAndCode.get(`${provinceKey}:${wardKey}`) : undefined
-
-  const street = property.street?.trim()
-  const mappedLocation = [street, wardName, provinceName].filter(Boolean).join(', ')
-
-  return mappedLocation || property.address || 'Đang cập nhật'
 }
 
 export default function PendingFavoriteToast() {

@@ -5,6 +5,8 @@ import type { AxiosRequestConfig } from 'axios'
 import { buildQuery } from '@/app/lib/query'
 import { getJSON } from '@/app/lib/http'
 
+const VIP_POST_TYPES = ['silver', 'gold', 'diamond']
+
 type PropertiesCountByLocationApiResponse = {
   totalDocs: number
 }
@@ -108,7 +110,7 @@ export async function fetchForYouProperties(
   const vipQuery = buildQuery({
     ...baseQuery,
     where: {
-      and: [...baseQuery.where.and, { postType: { equals: 'vip' } }],
+      and: [...baseQuery.where.and, { postType: { in: VIP_POST_TYPES } }],
     },
     sort: '-createdAt',
     limit,
@@ -130,7 +132,7 @@ export async function fetchForYouProperties(
   const normalQuery = buildQuery({
     ...baseQuery,
     where: {
-      and: [...baseQuery.where.and, { postType: { not_equals: 'vip' } }],
+      and: [...baseQuery.where.and, { postType: { equals: 'normal' } }],
     },
     sort: '-createdAt',
     limit: remaining,

@@ -10,7 +10,6 @@ export type PropertySearchState = {
   wardCodes: string[]
   streets: string[]
   projectIds: string[]
-  listingTypes: string[]
   propertyTypes: string[]
   postTypes: string[]
   directions: string[]
@@ -33,7 +32,6 @@ const initialState: PropertySearchState = {
   wardCodes: [],
   streets: [],
   projectIds: [],
-  listingTypes: [],
   propertyTypes: [],
   postTypes: [],
   directions: [],
@@ -75,7 +73,6 @@ const propertySearchSlice = createSlice({
       state.district = parsed.filters.district
       state.provinceCodes = parsed.filters.provinceCode ? [parsed.filters.provinceCode] : []
       state.wardCodes = parsed.filters.wardCode ? [parsed.filters.wardCode] : []
-      state.listingTypes = parsed.filters.listingType ? [parsed.filters.listingType] : []
       state.propertyTypes = parsed.filters.propertyType ? [parsed.filters.propertyType] : []
       state.postTypes = parsed.filters.postType ? [parsed.filters.postType] : []
       state.directions = parsed.filters.direction ? [parsed.filters.direction] : []

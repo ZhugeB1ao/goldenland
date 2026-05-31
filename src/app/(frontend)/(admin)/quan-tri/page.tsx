@@ -8,7 +8,6 @@ import {
   formatCompactVND,
   formatVND,
   propertyTypeLabel,
-  listingTypeLabel,
   reportReasonLabel,
   relativeTime,
 } from '../lib/format'
@@ -121,7 +120,7 @@ export default async function AdminDashboardPage() {
                     <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
                       <span>{propertyTypeLabel(p.propertyType)}</span>
                       <span>•</span>
-                      <span>{listingTypeLabel(p.listingType)}</span>
+                      <span>Bán</span>
                       <span>•</span>
                       <span className="font-medium text-slate-700">{formatVND(p.price)}</span>
                       <span>•</span>

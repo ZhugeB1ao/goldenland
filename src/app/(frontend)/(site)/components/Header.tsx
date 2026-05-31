@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RegisterForm } from './RegisterForm'
@@ -40,6 +40,7 @@ function isNavLinkActive(pathname: string, href: string): boolean {
 
 export default function Header() {
   const pathname = usePathname()
+  const router = useRouter()
   const user = useSelector((state: RootState) => selectUser(state as any))
   const isLoggedIn = useSelector((state: RootState) => selectIsLoggedIn(state as any))
 
@@ -47,6 +48,7 @@ export default function Header() {
   const favoritesPopupContainerRef = useRef<HTMLDivElement | null>(null)
   const [showSignIn, setShowSignIn] = useState(false)
   const [showRegister, setShowRegister] = useState(false)
+  const [authRedirectPath, setAuthRedirectPath] = useState<string | null>(null)
   const isAuthModalOpen = showSignIn || showRegister
   const [showProfilePopUp, setShowProfilePopUp] = useState(false)
   const [showFavoritesPopup, setShowFavoritesPopup] = useState(false)
@@ -54,9 +56,11 @@ export default function Header() {
   const closeAuthModal = () => {
     setShowSignIn(false)
     setShowRegister(false)
+    setAuthRedirectPath(null)
   }
 
-  const openSignInModal = () => {
+  const openSignInModal = (redirectPath?: string) => {
+    setAuthRedirectPath(redirectPath ?? null)
     setShowSignIn(true)
     setShowRegister(false)
   }
@@ -64,6 +68,28 @@ export default function Header() {
   const openRegisterModal = () => {
     setShowSignIn(false)
     setShowRegister(true)
+  }
+
+  const handleAccountClick = () => {
+    if (isLoggedIn) {
+      router.push('/account')
+      return
+    }
+
+    setShowProfilePopUp(false)
+    openSignInModal('/account')
+  }
+
+  const handleAuthSuccess = () => {
+    const redirectPath = authRedirectPath
+    closeAuthModal()
+
+    if (redirectPath) {
+      router.push(redirectPath)
+      return
+    }
+
+    router.refresh()
   }
 
   const modalContainerClassName =
@@ -209,7 +235,7 @@ export default function Header() {
             ) : (
               <>
                 <Button
-                  onClick={openSignInModal}
+                  onClick={() => openSignInModal()}
                   className="scale-95 text-sm font-semibold text-zinc-700 transition-all duration-300 active:scale-100 hover:text-zinc-900"
                 >
                   Đăng nhập
@@ -224,8 +250,12 @@ export default function Header() {
               </>
             )}
 
-            <button className="editorial-gradient scale-95 rounded-md px-4 py-2 text-sm font-semibold text-white transition-transform active:scale-100 sm:px-6">
-              <Link href="../../account">Đăng tin</Link>
+            <button
+              className="editorial-gradient scale-95 rounded-md px-4 py-2 text-sm font-semibold text-white transition-transform active:scale-100 sm:px-6"
+              onClick={handleAccountClick}
+              type="button"
+            >
+              Đăng tin
             </button>
           </div>
         </div>
@@ -244,10 +274,17 @@ export default function Header() {
             onClick={(event) => event.stopPropagation()}
           >
             {showSignIn ? (
-              <SignInForm onClose={closeAuthModal} onSwitchToRegister={openRegisterModal} />
+              <SignInForm
+                onClose={closeAuthModal}
+                onSwitchToRegister={openRegisterModal}
+                onSuccess={handleAuthSuccess}
+              />
             ) : null}
             {showRegister ? (
-              <RegisterForm onClose={closeAuthModal} onSwitchToSignIn={openSignInModal} />
+              <RegisterForm
+                onClose={handleAuthSuccess}
+                onSwitchToSignIn={() => openSignInModal(authRedirectPath ?? undefined)}
+              />
             ) : null}
 
             <button

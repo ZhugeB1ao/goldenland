@@ -6,7 +6,6 @@ import { useState, useTransition } from 'react'
 type Props = {
   status?: string
   propertyType?: string
-  listingType?: string
   q?: string
 }
 
@@ -33,13 +32,7 @@ const PROPERTY_TYPES = [
   { value: 'commercial', label: 'Mặt bằng' },
 ]
 
-const LISTING_TYPES = [
-  { value: '', label: 'Bán & Cho thuê' },
-  { value: 'sale', label: 'Bán' },
-  { value: 'rent', label: 'Cho thuê' },
-]
-
-export default function PropertyFilterBar({ status, propertyType, listingType, q }: Props) {
+export default function PropertyFilterBar({ status, propertyType, q }: Props) {
   const router = useRouter()
   const sp = useSearchParams()
   const [isPending, startTransition] = useTransition()
@@ -90,18 +83,6 @@ export default function PropertyFilterBar({ status, propertyType, listingType, q
           className="px-3 py-2 rounded-md border border-slate-200 text-sm bg-white"
         >
           {PROPERTY_TYPES.map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={listingType || ''}
-          onChange={(e) => updateParam('listingType', e.target.value || undefined)}
-          className="px-3 py-2 rounded-md border border-slate-200 text-sm bg-white"
-        >
-          {LISTING_TYPES.map((t) => (
             <option key={t.value} value={t.value}>
               {t.label}
             </option>

@@ -24,7 +24,7 @@ export default function TopUpPage() {
     try {
       const res = await fetch('/api/my/dashboard')
       const data = await res.json()
-
+      console.log('TOPUP STATUS:', data)
       if (res.ok) {
         setBalance(Number(data.balance || 0))
       }
@@ -42,12 +42,17 @@ export default function TopUpPage() {
 
     const intervalId = window.setInterval(async () => {
       try {
-        const res = await fetch(`/api/top-up-status/${paymentInfo.orderId}`)
+        const res = await fetch(
+          `/api/top-up-status/${paymentInfo.orderId}`,
+          {
+            cache: 'no-store',
+          }
+        )
         const data = await res.json()
-
+        console.log('TOPUP STATUS:', data)
         if (!res.ok) return
 
-        if (data.status === 'paid') {
+        if (String(data.status).toLowerCase() === 'paid') {
           setPaymentInfo((current) => (current ? { ...current, status: 'paid' } : current))
           setStatusMessage('Thanh toan thanh cong. So du da duoc cong vao tai khoan.')
           loadBalance()
@@ -82,6 +87,7 @@ export default function TopUpPage() {
       })
 
       const data = await res.json()
+      console.log('TOPUP STATUS:', data)
 
       if (!res.ok) throw new Error(data.error || 'Khong tao duoc link thanh toan')
 

@@ -1,12 +1,161 @@
+import { createClient } from '@supabase/supabase-js'
 import type { CollectionConfig } from 'payload'
 
 import { authenticated, ownerOrAdmin, statusOrOwnerOrAdmin, adminOnlyField } from '@/access'
+import {
+    refreshScheduledProperties,
+    SCHEDULE_CONTEXT_KEY,
+} from '@/hooks/refreshScheduledProperties'
+
+const PROPERTIES_BUCKET = 'Properties'
+
+const normalizeProjectID = (project: unknown): string | null => {
+    if (typeof project === 'string' || typeof project === 'number') return String(project)
+    if (project && typeof project === 'object' && 'id' in project) {
+        const id = (project as { id?: unknown }).id
+        if (typeof id === 'string' || typeof id === 'number') return String(id)
+    }
+    return null
+}
+
+const extractStreetFromAddress = (address: string | null | undefined): string | null => {
+    const firstSegment = address
+        ?.split(',')
+        .map((segment) => segment.trim())
+        .find(Boolean)
+
+    if (!firstSegment) return null
+
+    const normalized = firstSegment
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+
+    if (
+        normalized.startsWith('phuong ') ||
+        normalized.startsWith('xa ') ||
+        normalized.startsWith('thi tran ') ||
+        normalized.startsWith('thi xa ') ||
+        normalized.startsWith('dac khu ') ||
+        normalized.startsWith('quan ') ||
+        normalized.startsWith('huyen ') ||
+        normalized.startsWith('thanh pho ') ||
+        normalized.startsWith('tp ') ||
+        normalized.startsWith('tinh ')
+    ) {
+        return null
+    }
+
+    return firstSegment
+}
+
+const PROPERTY_TYPE_LABELS: Record<string, string> = {
+    house: 'nhà riêng',
+    apartment: 'căn hộ',
+    land: 'đất nền',
+    villa: 'biệt thự',
+    townhouse: 'nhà phố',
+    shophouse: 'shophouse',
+    penthouse: 'penthouse',
+    condotel: 'condotel',
+    warehouse: 'kho xưởng',
+    commercial: 'mặt bằng',
+}
+
+const truncateText = (value: string, maxLength: number): string => {
+    if (value.length <= maxLength) return value
+    return value.slice(0, maxLength).replace(/\s+\S*$/, '').trim()
+}
+
+const cleanText = (value: unknown): string | null => {
+    if (typeof value !== 'string') return null
+    const trimmed = value.trim().replace(/\s+/g, ' ')
+    return trimmed || null
+}
+
+const buildPropertySEO = (data: Record<string, unknown>, projectName?: string | null) => {
+    const title = cleanText(data.title)
+    const description = cleanText(data.description)
+    const address = cleanText(data.address)
+    const street = cleanText(data.street)
+    const propertyType =
+        typeof data.propertyType === 'string'
+            ? PROPERTY_TYPE_LABELS[data.propertyType] || data.propertyType
+            : 'bất động sản'
+    const location = address || street
+    const projectText = projectName ? ` tại ${projectName}` : ''
+    const locationText = location ? `, ${location}` : ''
+
+    const seoTitle = truncateText(title || `Bán ${propertyType}${projectText}${locationText}`, 70)
+    const seoDescription = truncateText(
+        description ||
+        `Thông tin ${propertyType}${projectText}${location ? ` ở ${location}` : ''}. Xem chi tiết giá, diện tích, vị trí và liên hệ tư vấn.`,
+        160,
+    )
+    const seoKeywords = truncateText(
+        [
+            title,
+            propertyType,
+            projectName,
+            address,
+            street,
+            'bất động sản',
+            'nhà đất',
+        ]
+            .filter(Boolean)
+            .join(', '),
+        255,
+    )
+
+    return {
+        seoTitle,
+        seoDescription,
+        seoKeywords,
+    }
+}
+
+const extractPropertyImagePath = (imageUrl: unknown): string | null => {
+    if (typeof imageUrl !== 'string' || !imageUrl.trim()) return null
+
+    try {
+        const { pathname } = new URL(imageUrl)
+        const marker = `/storage/v1/object/public/${PROPERTIES_BUCKET}/`
+        const markerIndex = pathname.indexOf(marker)
+
+        if (markerIndex === -1) return null
+
+        return decodeURIComponent(pathname.slice(markerIndex + marker.length))
+    } catch {
+        return null
+    }
+}
+
+const deletePropertyImagesFromBucket = async (imageUrls: unknown[]) => {
+    const supabaseUrl = process.env.SUPABASE_URL
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseUrl || !supabaseKey) return
+
+    const paths = Array.from(
+        new Set(imageUrls.map(extractPropertyImagePath).filter((path): path is string => Boolean(path))),
+    )
+
+    if (paths.length === 0) return
+
+    const supabase = createClient(supabaseUrl, supabaseKey)
+    const { error } = await supabase.storage.from(PROPERTIES_BUCKET).remove(paths)
+
+    if (error) {
+        throw new Error(`Không thể xóa ảnh tin đăng khỏi bucket: ${error.message}`)
+    }
+}
 
 export const Properties: CollectionConfig = {
     slug: 'properties',
     admin: {
         useAsTitle: 'title',
-        defaultColumns: ['title', 'listingType', 'price', 'status', 'createdAt'],
+        defaultColumns: ['title', 'price', 'status', 'createdAt'],
     },
     access: {
         create: authenticated,
@@ -45,26 +194,14 @@ export const Properties: CollectionConfig = {
                             required: true,
                         },
                         {
-                            type: 'row', // 2 field trên 1 hàng
-                            fields: [
-                                {
-                                    name: 'listingType',
-                                    type: 'select',
-                                    required: true,
-                                    options: [
-                                        { label: 'Bán', value: 'sale' },
-                                        { label: 'Cho thuê', value: 'rent' },
-                                    ],
-                                },
-                                {
-                                    name: 'postType',
-                                    type: 'select',
-                                    defaultValue: 'normal',
-                                    options: [
-                                        { label: 'Thường', value: 'normal' },
-                                        { label: 'VIP', value: 'vip' },
-                                    ],
-                                },
+                            name: 'postType',
+                            type: 'select',
+                            defaultValue: 'normal',
+                            options: [
+                                { label: 'Thường', value: 'normal' },
+                                { label: 'VIP Bạc', value: 'silver' },
+                                { label: 'VIP Vàng', value: 'gold' },
+                                { label: 'VIP Kim Cương', value: 'diamond' },
                             ],
                         },
                         {
@@ -317,15 +454,36 @@ export const Properties: CollectionConfig = {
                                     ],
                                 },
                                 {
-                                    name: 'label',
-                                    type: 'select',
-                                    defaultValue: 'normal',
-                                    options: [
-                                        { label: 'Thường', value: 'normal' },
-                                        { label: 'VIP', value: 'vip' },
-                                        { label: 'Hot', value: 'hot' },
-                                        { label: 'Premium', value: 'premium' },
-                                    ],
+                                    name: 'durationDays',
+                                    type: 'number',
+                                    defaultValue: 15,
+                                    min: 1,
+                                    admin: { description: 'Số ngày hiển thị của tin đăng' },
+                                },
+                            ],
+                        },
+                        {
+                            type: 'row',
+                            fields: [
+                                {
+                                    name: 'scheduledPublishAt',
+                                    type: 'date',
+                                    admin: {
+                                        date: {
+                                            pickerAppearance: 'dayAndTime',
+                                        },
+                                        description: 'Tin pending sẽ tự chuyển active khi tới thời điểm này',
+                                    },
+                                },
+                                {
+                                    name: 'expiresAt',
+                                    type: 'date',
+                                    admin: {
+                                        date: {
+                                            pickerAppearance: 'dayAndTime',
+                                        },
+                                        description: 'Tin active sẽ tự chuyển expired khi quá thời điểm này',
+                                    },
                                 },
                             ],
                         },
@@ -356,8 +514,22 @@ export const Properties: CollectionConfig = {
                             type: 'textarea',
                             admin: {
                                 condition: (data) => data?.status === 'rejected',
-                                description: 'Lý do từ chối',
                             },
+                        },
+                        {
+                            name: 'label',
+                            type: 'select',
+                            defaultValue: 'normal',
+                            admin: {
+                                hidden: true,
+                                description: 'Deprecated: giữ cột cũ để tránh xoá dữ liệu, dùng postType thay thế.',
+                            },
+                            options: [
+                                { label: 'Thường', value: 'normal' },
+                                { label: 'VIP', value: 'vip' },
+                                { label: 'Hot', value: 'hot' },
+                                { label: 'Premium', value: 'premium' },
+                            ],
                         },
                     ],
                 },
@@ -371,12 +543,11 @@ export const Properties: CollectionConfig = {
                         {
                             name: 'seoTitle',
                             type: 'text',
-                            maxLength: 70,
+                            maxLength: 255,
                         },
                         {
                             name: 'seoDescription',
                             type: 'textarea',
-                            maxLength: 160,
                         },
                         {
                             name: 'seoKeywords',
@@ -418,8 +589,19 @@ export const Properties: CollectionConfig = {
     // Hooks
     // ============================
     hooks: {
+        beforeOperation: [
+            async ({ operation, req, context }) => {
+                if (context?.[SCHEDULE_CONTEXT_KEY]) return
+
+                // Chỉ trigger trên find/findByID — không trigger trên count
+                // vì count chỉ đếm số lượng, không cần data mới nhất về lịch đăng
+                if (operation === 'find' || operation === 'findByID') {
+                    await refreshScheduledProperties(req)
+                }
+            },
+        ],
         beforeChange: [
-            ({ data }) => {
+            async ({ data, operation, originalDoc, req }) => {
                 // Tự sinh slug từ title
                 if (data?.title && !data?.slug) {
                     data.slug = data.title
@@ -430,7 +612,69 @@ export const Properties: CollectionConfig = {
                         .replace(/[^a-z0-9]+/g, '-')
                         .replace(/(^-|-$)/g, '')
                 }
+
+                const projectId = normalizeProjectID(data?.project ?? originalDoc?.project)
+                let projectName: string | null = null
+
+                if (projectId) {
+                    const project = await req.payload.findByID({
+                        collection: 'projects',
+                        id: projectId,
+                        depth: 0,
+                        overrideAccess: false,
+                        req,
+                        select: {
+                            name: true,
+                            provinceCode: true,
+                            wardCode: true,
+                            address: true,
+                            latitude: true,
+                            longitude: true,
+                        },
+                    })
+
+                    projectName = cleanText(project.name)
+                    data.provinceCode = project.provinceCode || null
+                    data.wardCode = project.wardCode || null
+                    data.street = extractStreetFromAddress(project.address) || null
+                    data.address = project.address || null
+
+                    if (typeof project.latitude === 'number') {
+                        data.latitude = project.latitude
+                    }
+                    if (typeof project.longitude === 'number') {
+                        data.longitude = project.longitude
+                    }
+                }
+
+                if (operation === 'create') {
+                    const generatedSEO = buildPropertySEO(data, projectName)
+                    data.seoTitle = cleanText(data.seoTitle) || generatedSEO.seoTitle
+                    data.seoDescription = cleanText(data.seoDescription) || generatedSEO.seoDescription
+                    data.seoKeywords = cleanText(data.seoKeywords) || generatedSEO.seoKeywords
+                }
+
                 return data
+            },
+        ],
+        beforeDelete: [
+            async ({ id, req }) => {
+                const property = await req.payload.findByID({
+                    collection: 'properties',
+                    id,
+                    depth: 0,
+                    overrideAccess: true,
+                    req,
+                    select: {
+                        images: true,
+                    },
+                })
+
+                const imageUrls = Array.isArray(property.images)
+                    ? property.images.map((item) => item?.image)
+                    : []
+
+                await deletePropertyImagesFromBucket(imageUrls)
             },
         ],
     },

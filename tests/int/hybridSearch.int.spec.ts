@@ -10,6 +10,8 @@ describe('hybridSearch parsing', () => {
   it('treats single area as max area', () => {
     const result = parseSearch('100 m²', 'property')
     expect(result.filters.maxArea).toBe(100)
+    const areaChip = result.chips.find((chip) => chip.key === 'area')
+    expect(areaChip?.label).toBe('Dưới 100 m²')
   })
 
   it('treats single price as max price', () => {
@@ -17,14 +19,13 @@ describe('hybridSearch parsing', () => {
     expect(result.filters.maxPrice).toBe(2_000_000_000)
   })
 
-  it('removes listing type token from input', () => {
-    const cleared = removeSearchTokenByChip('Bán nhà phố', {
-      key: 'listingType',
-      label: 'Bán',
-      value: 'sale',
-      editText: 'bán',
-    })
-    expect(cleared).toBe('nhà phố')
+  it('removes property type token from input', () => {
+    const result = parseSearch('Nhà phố quận 7', 'property')
+    const chip = result.chips.find((item) => item.key === 'propertyType')
+    expect(chip).toBeDefined()
+    const cleared = removeSearchTokenByChip('Nhà phố quận 7', chip!)
+    expect(cleared).toContain('quận 7')
+    expect(cleared.toLowerCase()).not.toContain('nhà phố')
   })
 
   it('strips numeric filters from news keyword', () => {

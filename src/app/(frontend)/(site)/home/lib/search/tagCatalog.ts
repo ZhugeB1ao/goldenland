@@ -35,27 +35,16 @@ const createAttributeTags = (
 
 export const PROPERTY_ATTRIBUTE_TAGS = createAttributeTags(
   [
+    { label: 'bán', aliases: ['ban', 'bán', 'mua bán', 'nha dat ban', 'nhà đất bán'], popularity: 88 },
     {
-      label: 'bán',
-      aliases: ['ban', 'bán', 'mua bán', 'nha dat ban', 'nhà đất bán'],
-      filter: { listingType: 'sale' },
-      popularity: 88,
-    },
-    {
-      label: 'cho thuê',
-      aliases: ['cho thue', 'cho thuê', 'thue', 'thuê', 'nha thue', 'nhà thuê'],
-      filter: { listingType: 'rent' },
-      popularity: 84,
-    },
-    {
-      label: 'tin VIP',
-      aliases: ['vip', 'tin vip', 'bai vip', 'bài vip'],
-      filter: { postType: 'vip' },
+      label: 'vip kim cương',
+      aliases: ['vip', 'tin vip', 'bai vip', 'bài vip', 'vip kim cuong', 'vip kim cương'],
+      filter: { postType: 'diamond' },
       popularity: 62,
     },
     { label: 'tin thường', aliases: ['tin thuong', 'tin thường', 'normal'], popularity: 45 },
-    { label: 'tin hot', aliases: ['tin hot', 'hot'], popularity: 60 },
-    { label: 'tin premium', aliases: ['premium', 'tin premium'], popularity: 57 },
+    { label: 'vip bạc', aliases: ['vip bac', 'vip bạc', 'silver'], filter: { postType: 'silver' }, popularity: 60 },
+    { label: 'vip vàng', aliases: ['vip vang', 'vip vàng', 'gold'], filter: { postType: 'gold' }, popularity: 57 },
     { label: 'đã xác thực', aliases: ['da xac thuc', 'đã xác thực', 'verified'], popularity: 64 },
     {
       label: 'nhà riêng',

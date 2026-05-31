@@ -45,7 +45,6 @@ const updateMinMax = (value: unknown, current: { min: number | null; max: number
 }
 
 const DYNAMIC_KEYS = [
-  'listingType',
   'postType',
   'direction',
   'legalStatus',
@@ -96,7 +95,6 @@ export const propertyFilters: Endpoint = {
             project: true,
             price: true,
             area: true,
-            listingType: true,
             postType: true,
             direction: true,
             legalStatus: true,

@@ -53,7 +53,6 @@ export async function searchPropertiesByParsed(
   const query = buildQuery({
     keyword: parsed.keyword || undefined,
     district: parsed.filters.district || undefined,
-    listingType: parsed.filters.listingType || undefined,
     propertyType: parsed.filters.propertyType || undefined,
     provinceCode: parsed.filters.provinceCode || undefined,
     bedrooms: parsed.filters.bedrooms || undefined,

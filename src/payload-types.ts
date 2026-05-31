@@ -86,6 +86,7 @@ export interface Config {
     favorites: Favorite;
     'view-history': ViewHistory;
     'spam-blacklist': SpamBlacklist;
+    promotions: Promotion;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -112,6 +113,7 @@ export interface Config {
     favorites: FavoritesSelect<false> | FavoritesSelect<true>;
     'view-history': ViewHistorySelect<false> | ViewHistorySelect<true>;
     'spam-blacklist': SpamBlacklistSelect<false> | SpamBlacklistSelect<true>;
+    promotions: PromotionsSelect<false> | PromotionsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -181,9 +183,25 @@ export interface User {
    */
   packageExpiresAt?: string | null;
   /**
-   * Số lượt đăng tin còn lại
+   * Các voucher user đang có (được tặng từ gói)
    */
-  availableListings?: number | null;
+  availableVouchers?:
+    | {
+        /**
+         * Số lượng voucher còn lại
+         */
+        quantity?: number | null;
+        /**
+         * Giá trị giảm giá (VNĐ)
+         */
+        discountValue?: number | null;
+        /**
+         * Loại tin được áp dụng
+         */
+        appliedFor?: ('normal' | 'silver' | 'gold' | 'diamond') | null;
+        id?: string | null;
+      }[]
+    | null;
   isVerified?: boolean | null;
   isActive?: boolean | null;
   verificationToken?: string | null;
@@ -234,9 +252,33 @@ export interface Package {
    */
   originalPrice?: number | null;
   /**
-   * Số lượt đăng tin
+   * Các tùy chọn thời gian của gói
    */
-  totalProperties: number;
+  durationOptions?:
+    | {
+        /**
+         * Số tháng (vd: 1, 3, 6)
+         */
+        months: number;
+        /**
+         * Giá bán thực tế (VNĐ)
+         */
+        price: number;
+        /**
+         * Giá gốc trước khi giảm (VNĐ)
+         */
+        originalPrice?: number | null;
+        /**
+         * Phần trăm giảm giá (%)
+         */
+        discount?: number | null;
+        /**
+         * Tiết kiệm mỗi tháng (VNĐ)
+         */
+        savePerMonth?: number | null;
+        id?: string | null;
+      }[]
+    | null;
   /**
    * Thời hạn gói (ngày)
    */
@@ -261,7 +303,7 @@ export interface Package {
         /**
          * Loại tin được áp dụng voucher
          */
-        appliedFor?: ('normal' | 'vip' | 'special') | null;
+        appliedFor?: ('normal' | 'silver' | 'gold' | 'diamond') | null;
         id?: string | null;
       }[]
     | null;
@@ -277,7 +319,7 @@ export interface Package {
   /**
    * Loại tin được đăng từ gói này
    */
-  postType?: ('normal' | 'vip') | null;
+  postType?: ('normal' | 'silver' | 'gold' | 'diamond') | null;
   sort?: number | null;
   isActive?: boolean | null;
   updatedAt: string;
@@ -315,8 +357,7 @@ export interface Property {
    */
   slug?: string | null;
   description: string;
-  listingType: 'sale' | 'rent';
-  postType?: ('normal' | 'vip') | null;
+  postType?: ('normal' | 'silver' | 'gold' | 'diamond') | null;
   price: number;
   priceUnit?: ('total' | 'per_m2' | 'per_month' | 'negotiable') | null;
   propertyType:
@@ -374,7 +415,18 @@ export interface Property {
    */
   videoUrl?: string | null;
   status: 'draft' | 'pending' | 'active' | 'expired' | 'sold' | 'rejected';
-  label?: ('normal' | 'vip' | 'hot' | 'premium') | null;
+  /**
+   * Số ngày hiển thị của tin đăng
+   */
+  durationDays?: number | null;
+  /**
+   * Tin pending sẽ tự chuyển active khi tới thời điểm này
+   */
+  scheduledPublishAt?: string | null;
+  /**
+   * Tin active sẽ tự chuyển expired khi quá thời điểm này
+   */
+  expiresAt?: string | null;
   /**
    * Tin đã xác thực
    */
@@ -384,10 +436,11 @@ export interface Property {
    */
   verifiedBy?: (number | null) | User;
   verifiedAt?: string | null;
-  /**
-   * Lý do từ chối
-   */
   rejectionReason?: string | null;
+  /**
+   * Deprecated: giữ cột cũ để tránh xoá dữ liệu, dùng postType thay thế.
+   */
+  label?: ('normal' | 'vip' | 'hot' | 'premium') | null;
   seoTitle?: string | null;
   seoDescription?: string | null;
   seoKeywords?: string | null;
@@ -716,18 +769,44 @@ export interface Report {
 export interface PostingPrice {
   id: number;
   /**
-   * VD: Tin thường 7 ngày, Tin VIP 30 ngày
+   * VD: Tin thường, VIP bạc, VIP vàng, VIP kim cương
    */
   name: string;
-  postType: 'normal' | 'vip';
   /**
-   * Số ngày hiển thị
+   * Mô tả ngắn quyền lợi/độ ưu tiên của loại tin
    */
-  durationDays: number;
+  description?: string | null;
+  postType: 'normal' | 'silver' | 'gold' | 'diamond';
   /**
-   * Giá (VNĐ)
+   * Số lần hiển thị/ưu tiên nhiều hơn so với tin thường. VD: 8, 15, 30
    */
-  price: number;
+  displayMultiplier: number;
+  /**
+   * Giá 1 ngày (VNĐ)
+   */
+  dailyPrice: number;
+  /**
+   * Số ngày đề xuất khi user chọn loại tin này
+   */
+  recommendedDurationDays: number;
+  /**
+   * Các mốc ngày được phép chọn. Ngày càng nhiều có thể đặt % ưu đãi càng cao.
+   */
+  durationOptions: {
+    /**
+     * Số ngày hiển thị
+     */
+    durationDays: number;
+    /**
+     * Giảm trên giá/ngày, VD: 5 nghĩa là giảm 5%
+     */
+    discountPercent?: number | null;
+    /**
+     * Nhãn hiển thị tùy chọn, VD: Đề xuất, Tiết kiệm 5%
+     */
+    label?: string | null;
+    id?: string | null;
+  }[];
   sort?: number | null;
   isActive?: boolean | null;
   updatedAt: string;
@@ -786,6 +865,10 @@ export interface Order {
   user: number | User;
   orderType: 'package' | 'single_post' | 'top_up';
   package?: (number | null) | Package;
+  /**
+   * Số tháng đăng ký (nếu mua gói có nhiều tùy chọn)
+   */
+  durationMonths?: number | null;
   postingPrice?: (number | null) | PostingPrice;
   /**
    * Tin đăng liên quan (nếu đăng tin lẻ)
@@ -796,6 +879,10 @@ export interface Order {
    */
   voucher?: (number | null) | Voucher;
   /**
+   * Khuyen mai da ap dung (neu co)
+   */
+  promotion?: (number | null) | Promotion;
+  /**
    * Giá gốc (VNĐ)
    */
   originalAmount: number;
@@ -803,6 +890,10 @@ export interface Order {
    * Giảm giá (VNĐ)
    */
   discountAmount?: number | null;
+  /**
+   * So tien giam tu khuyen mai (VND)
+   */
+  promotionDiscount?: number | null;
   /**
    * Thành tiền (VNĐ)
    */
@@ -818,6 +909,30 @@ export interface Order {
    * Ghi chú nội bộ
    */
   adminNote?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promotions".
+ */
+export interface Promotion {
+  id: number;
+  name: string;
+  description?: string | null;
+  /**
+   * Ma khuyen mai nguoi dung nhap khi mua goi
+   */
+  code: string;
+  discountType: 'percent' | 'fixed';
+  discountValue: number;
+  maxDiscount?: number | null;
+  appliesToPackages: (number | Package)[];
+  startDate: string;
+  endDate: string;
+  allowVoucherStacking?: boolean | null;
+  priority?: number | null;
+  isActive?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -980,6 +1095,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'spam-blacklist';
         value: number | SpamBlacklist;
+      } | null)
+    | ({
+        relationTo: 'promotions';
+        value: number | Promotion;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1035,7 +1154,14 @@ export interface UsersSelect<T extends boolean = true> {
   balance?: T;
   activePackage?: T;
   packageExpiresAt?: T;
-  availableListings?: T;
+  availableVouchers?:
+    | T
+    | {
+        quantity?: T;
+        discountValue?: T;
+        appliedFor?: T;
+        id?: T;
+      };
   isVerified?: T;
   isActive?: T;
   verificationToken?: T;
@@ -1083,7 +1209,6 @@ export interface PropertiesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   description?: T;
-  listingType?: T;
   postType?: T;
   price?: T;
   priceUnit?: T;
@@ -1111,11 +1236,14 @@ export interface PropertiesSelect<T extends boolean = true> {
       };
   videoUrl?: T;
   status?: T;
-  label?: T;
+  durationDays?: T;
+  scheduledPublishAt?: T;
+  expiresAt?: T;
   isVerified?: T;
   verifiedBy?: T;
   verifiedAt?: T;
   rejectionReason?: T;
+  label?: T;
   seoTitle?: T;
   seoDescription?: T;
   seoKeywords?: T;
@@ -1301,7 +1429,16 @@ export interface PackagesSelect<T extends boolean = true> {
   isBestSeller?: T;
   price?: T;
   originalPrice?: T;
-  totalProperties?: T;
+  durationOptions?:
+    | T
+    | {
+        months?: T;
+        price?: T;
+        originalPrice?: T;
+        discount?: T;
+        savePerMonth?: T;
+        id?: T;
+      };
   durationDays?: T;
   propertyDurationDays?: T;
   bonusVouchers?:
@@ -1330,9 +1467,19 @@ export interface PackagesSelect<T extends boolean = true> {
  */
 export interface PostingPricesSelect<T extends boolean = true> {
   name?: T;
+  description?: T;
   postType?: T;
-  durationDays?: T;
-  price?: T;
+  displayMultiplier?: T;
+  dailyPrice?: T;
+  recommendedDurationDays?: T;
+  durationOptions?:
+    | T
+    | {
+        durationDays?: T;
+        discountPercent?: T;
+        label?: T;
+        id?: T;
+      };
   sort?: T;
   isActive?: T;
   updatedAt?: T;
@@ -1365,11 +1512,14 @@ export interface OrdersSelect<T extends boolean = true> {
   user?: T;
   orderType?: T;
   package?: T;
+  durationMonths?: T;
   postingPrice?: T;
   property?: T;
   voucher?: T;
+  promotion?: T;
   originalAmount?: T;
   discountAmount?: T;
+  promotionDiscount?: T;
   totalAmount?: T;
   paymentMethod?: T;
   paymentRef?: T;
@@ -1422,6 +1572,26 @@ export interface SpamBlacklistSelect<T extends boolean = true> {
   type?: T;
   value?: T;
   reason?: T;
+  isActive?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promotions_select".
+ */
+export interface PromotionsSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  code?: T;
+  discountType?: T;
+  discountValue?: T;
+  maxDiscount?: T;
+  appliesToPackages?: T;
+  startDate?: T;
+  endDate?: T;
+  allowVoucherStacking?: T;
+  priority?: T;
   isActive?: T;
   updatedAt?: T;
   createdAt?: T;

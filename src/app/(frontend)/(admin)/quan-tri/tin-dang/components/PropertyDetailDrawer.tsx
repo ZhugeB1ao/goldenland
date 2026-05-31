@@ -6,7 +6,6 @@ import axios from 'axios'
 import {
   formatVND,
   formatDateTime,
-  listingTypeLabel,
   propertyStatusBadgeClass,
   propertyStatusLabel,
   propertyTypeLabel,
@@ -24,7 +23,6 @@ type Property = {
   title: string
   description?: string
   status?: string
-  listingType?: string
   propertyType?: string
   postType?: string
   price?: number
@@ -187,7 +185,7 @@ export default function PropertyDetailDrawer({
               )}
 
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <Info label="Loại tin" value={listingTypeLabel(data.listingType)} />
+                <Info label="Loại tin" value="Bán" />
                 <Info label="Loại BĐS" value={propertyTypeLabel(data.propertyType)} />
                 <Info label="Giá" value={<b>{formatVND(data.price)}</b>} />
                 <Info label="Diện tích" value={data.area ? `${data.area} m²` : '-'} />

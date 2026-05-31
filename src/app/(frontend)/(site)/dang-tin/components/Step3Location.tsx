@@ -5,10 +5,19 @@ import type { FormData } from '../page'
 
 type Province = { code: string; name: string }
 type Ward = { code: string; name: string }
+type ProjectOption = {
+  id: string
+  name: string
+  provinceCode?: string | null
+  wardCode?: string | null
+  address?: string | null
+  latitude?: number | null
+  longitude?: number | null
+}
 
 type Props = {
   data: FormData
-  onChange: (field: keyof FormData, value: string) => void
+  onChange: (field: keyof FormData, value: string | number | null) => void
 }
 
 function Label({ children, required }: { children: React.ReactNode; required?: boolean }) {
@@ -41,8 +50,10 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
 export default function Step3Location({ data, onChange }: Props) {
   const [provinces, setProvinces] = useState<Province[]>([])
   const [wards, setWards] = useState<Ward[]>([])
+  const [projects, setProjects] = useState<ProjectOption[]>([])
   const [loadingProvinces, setLoadingProvinces] = useState(true)
   const [loadingWards, setLoadingWards] = useState(false)
+  const [loadingProjects, setLoadingProjects] = useState(false)
 
   useEffect(() => {
     fetch('/api/divisions/provinces')
@@ -65,37 +76,109 @@ export default function Step3Location({ data, onChange }: Props) {
       .finally(() => setLoadingWards(false))
   }, [data.provinceCode])
 
+  useEffect(() => {
+    setLoadingProjects(true)
+    const params = new URLSearchParams()
+    params.set('depth', '0')
+    params.set('limit', '100')
+    params.set('sort', 'name')
+
+    if (data.provinceCode && data.wardCode) {
+      params.set('where[and][0][provinceCode][equals]', data.provinceCode)
+      params.set('where[and][1][wardCode][equals]', data.wardCode)
+    } else if (data.provinceCode) {
+      params.set('where[provinceCode][equals]', data.provinceCode)
+    }
+
+    fetch(`/api/projects?${params.toString()}`)
+      .then((r) => r.json())
+      .then((res) => {
+        const docs: any[] = Array.isArray(res?.docs) ? res.docs : []
+        const mapped: ProjectOption[] = docs.map((project) => ({
+          id: String(project.id),
+          name: String(project.name || ''),
+          provinceCode: typeof project.provinceCode === 'string' ? project.provinceCode : null,
+          wardCode: typeof project.wardCode === 'string' ? project.wardCode : null,
+          address: typeof project.address === 'string' ? project.address : null,
+          latitude: typeof project.latitude === 'number' ? project.latitude : null,
+          longitude: typeof project.longitude === 'number' ? project.longitude : null,
+        }))
+        setProjects(mapped)
+
+        if (data.project && !mapped.some((item) => item.id === data.project)) {
+          onChange('project', '')
+        }
+      })
+      .catch(() => setProjects([]))
+      .finally(() => setLoadingProjects(false))
+  }, [data.provinceCode, data.wardCode, data.project])
+
+  useEffect(() => {
+    if (data.project) return
+    if (!data.street.trim() || !data.provinceCode || !data.wardCode) return
+
+    const provinceName = provinces.find((p) => p.code === data.provinceCode)?.name || ''
+    const wardName = wards.find((w) => w.code === data.wardCode)?.name || ''
+    const query = [data.street.trim(), wardName, provinceName, 'Việt Nam'].filter(Boolean).join(', ')
+
+    const timer = window.setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({
+          format: 'json',
+          limit: '1',
+          countrycodes: 'vn',
+          q: query,
+        })
+
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`)
+        const dataRes = await res.json()
+        const first = Array.isArray(dataRes) ? dataRes[0] : null
+        const lat = first?.lat ? Number(first.lat) : null
+        const lng = first?.lon ? Number(first.lon) : null
+
+        onChange('latitude', Number.isFinite(lat as number) ? lat : null)
+        onChange('longitude', Number.isFinite(lng as number) ? lng : null)
+      } catch {
+        onChange('latitude', null)
+        onChange('longitude', null)
+      }
+    }, 700)
+
+    return () => window.clearTimeout(timer)
+  }, [data.project, data.street, data.provinceCode, data.wardCode, provinces, wards])
+
   const handleProvinceChange = (code: string) => {
     onChange('provinceCode', code)
     onChange('wardCode', '')
-    updateAddress({ provinceCode: code, wardCode: '' })
+    onChange('latitude', null)
+    onChange('longitude', null)
   }
 
   const handleWardChange = (code: string) => {
     onChange('wardCode', code)
-    updateAddress({ wardCode: code })
+    onChange('latitude', null)
+    onChange('longitude', null)
   }
 
-  const updateAddress = (overrides: Partial<FormData>) => {
-    const provinceName = provinces.find(
-      (p) => p.code === (overrides.provinceCode ?? data.provinceCode),
-    )?.name || ''
-    const wardName = wards.find(
-      (w) => w.code === (overrides.wardCode ?? data.wardCode),
-    )?.name || ''
-    const street = data.street || ''
+  const handleStreetChange = (value: string) => onChange('street', value)
 
-    const parts = [street, wardName, provinceName].filter(Boolean)
-    onChange('address', parts.join(', '))
+  const handleProjectChange = (projectId: string) => {
+    onChange('project', projectId)
+    if (!projectId) return
+
+    const project = projects.find((item) => item.id === projectId)
+    if (!project) return
+
+    if (project.provinceCode) onChange('provinceCode', project.provinceCode)
+    if (project.wardCode) onChange('wardCode', project.wardCode)
+    onChange('address', project.address || '')
+    if (typeof project.latitude === 'number') onChange('latitude', project.latitude)
+    if (typeof project.longitude === 'number') onChange('longitude', project.longitude)
+    if (!data.propertyType) onChange('propertyType', 'apartment')
   }
 
-  const handleStreetChange = (value: string) => {
-    onChange('street', value)
-    const provinceName = provinces.find((p) => p.code === data.provinceCode)?.name || ''
-    const wardName = wards.find((w) => w.code === data.wardCode)?.name || ''
-    const parts = [value, wardName, provinceName].filter(Boolean)
-    onChange('address', parts.join(', '))
-  }
+  const mapLat = typeof data.latitude === 'number' ? data.latitude : null
+  const mapLng = typeof data.longitude === 'number' ? data.longitude : null
 
   return (
     <div className="space-y-5">
@@ -132,26 +215,78 @@ export default function Step3Location({ data, onChange }: Props) {
       </div>
 
       <div>
-        <Label>Tên đường / Số nhà</Label>
+        <Label>Dự án (nếu có)</Label>
+        <Select
+          value={data.project}
+          onChange={(e) => handleProjectChange(e.target.value)}
+          disabled={loadingProjects}
+        >
+          <option value="">
+            {loadingProjects ? 'Đang tải dự án...' : '-- Không thuộc dự án --'}
+          </option>
+          {projects.map((project) => (
+            <option key={project.id} value={project.id}>
+              {project.name}
+            </option>
+          ))}
+        </Select>
+        <p className="text-xs text-gray-400 mt-1">
+          {!data.provinceCode
+            ? 'Đang hiển thị toàn bộ dự án.'
+            : !data.wardCode
+              ? 'Đang hiển thị dự án theo tỉnh/thành đã chọn.'
+              : 'Đang hiển thị dự án theo tỉnh/thành và phường/xã đã chọn.'}
+        </p>
+      </div>
+
+      <div>
+        <Label>Tên đường</Label>
         <Input
           type="text"
           maxLength={255}
-          placeholder="VD: 123 Nguyễn Trãi"
+          placeholder="VD: Nguyễn Trãi"
           value={data.street}
           onChange={(e) => handleStreetChange(e.target.value)}
+          disabled={Boolean(data.project)}
         />
       </div>
 
       <div>
-        <Label>Địa chỉ đầy đủ</Label>
+        <Label>Địa chỉ công khai</Label>
         <Input
           type="text"
           maxLength={500}
-          placeholder="Tự động điền hoặc nhập thủ công"
+          placeholder="VD: Số 12, hẻm 45 Nguyễn Trãi"
           value={data.address}
           onChange={(e) => onChange('address', e.target.value)}
+          disabled={Boolean(data.project)}
         />
-        <p className="text-xs text-gray-400 mt-1">Địa chỉ này sẽ hiển thị công khai trong tin đăng</p>
+        {data.project ? (
+          <p className="text-xs text-gray-400 mt-1">Địa chỉ được lấy theo dự án đã chọn.</p>
+        ) : (
+          <p className="text-xs text-gray-400 mt-1">Địa chỉ này sẽ hiển thị công khai trên tin đăng.</p>
+        )}
+      </div>
+
+      <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+        <div className="text-sm font-medium text-gray-700 mb-2">Vị trí xem trước</div>
+        {mapLat !== null && mapLng !== null ? (
+          <div className="space-y-2">
+            <iframe
+              title="map-preview"
+              src={`https://maps.google.com/maps?q=${mapLat},${mapLng}&z=15&output=embed`}
+              className="h-56 w-full rounded-lg border-0"
+              loading="lazy"
+            />
+            <p className="text-xs text-gray-500">
+              Tọa độ: {mapLat.toFixed(6)}, {mapLng.toFixed(6)}
+            </p>
+          </div>
+        ) : (
+          <p className="text-xs text-gray-500">
+            Chọn dự án hoặc nhập đủ đường + phường + tỉnh để hệ thống ước lượng vị trí bản đồ.
+          </p>
+        )}
       </div>
     </div>
   )

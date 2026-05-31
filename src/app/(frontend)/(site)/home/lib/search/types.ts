@@ -1,4 +1,4 @@
-export type SearchTab = 'property' | 'project' | 'news'
+export type SearchTab = 'all' | 'property' | 'project' | 'news'
 
 export type SearchChipKey =
   | 'district'
@@ -8,7 +8,6 @@ export type SearchChipKey =
   | 'bathrooms'
   | 'price'
   | 'area'
-  | 'listingType'
   | 'propertyType'
   | 'direction'
   | 'legalStatus'
@@ -33,7 +32,6 @@ export type ParsedSearchFilters = {
   maxPrice?: number
   minArea?: number
   maxArea?: number
-  listingType?: string
   propertyType?: string
   direction?: string
   legalStatus?: string
@@ -42,8 +40,10 @@ export type ParsedSearchFilters = {
 }
 
 export type ParsedSearchResult = {
+  tab: SearchTab
   keyword: string
   filters: ParsedSearchFilters
+  chips: SearchChip[]
 }
 
 export type SearchHistoryItem = {

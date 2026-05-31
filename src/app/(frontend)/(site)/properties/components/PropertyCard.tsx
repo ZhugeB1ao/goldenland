@@ -8,6 +8,12 @@ import { formatPrice, formatProvince, FALLBACK_IMAGE } from '../lib/utils'
 import Image from 'next/image'
 import Link from 'next/link'
 
+const VIP_POST_LABELS: Record<string, string> = {
+  silver: 'VIP bạc',
+  gold: 'VIP vàng',
+  diamond: 'VIP kim cương',
+}
+
 interface PropertyCardProps {
   property: Property
 }
@@ -26,6 +32,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
   const imageUrl = typeof firstImage === 'string' ? firstImage : FALLBACK_IMAGE
 
   const priceLabel = formatPrice(property)
+  const vipLabel = property.postType ? VIP_POST_LABELS[property.postType] : undefined
   const provinceLabel = formatProvince(property)
   const areaLabel = property.area ? `${property.area} m²` : 'Đang cập nhật'
   const descriptionLabel = property.description?.trim() || 'Chưa có mô tả'
@@ -60,22 +67,22 @@ export function PropertyCard({ property }: PropertyCardProps) {
             src={imageUrl}
             unoptimized
           />
-          {property.postType === 'vip' && (
+          {vipLabel && (
             <div className="absolute top-4 left-4 bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider flex items-center gap-1 shadow-lg">
               <span className="material-symbols-outlined text-[12px]">award_star</span>
-              Tin ưu tiên
+              {vipLabel}
             </div>
           )}
         </div>
         <div className="w-1/3 flex flex-col gap-1">
-          {property.images?.slice(1, 3).map((img, idx) => (
+          {property.images?.slice(1, 3).map((image, idx) => (
             <div key={idx} className="h-1/2 relative">
               <Image
                 alt={`${property.title} ${idx + 2}`}
                 className="object-cover"
                 fill
                 sizes="(min-width: 768px) 23vw, 33vw"
-                src={typeof img.image === 'string' ? img.image : FALLBACK_IMAGE}
+                src={typeof image.image === 'string' ? image.image : FALLBACK_IMAGE}
                 unoptimized
               />
               {idx === 1 && (property.images?.length || 0) > 3 && (

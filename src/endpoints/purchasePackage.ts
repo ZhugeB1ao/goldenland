@@ -1,6 +1,8 @@
 // @ts-nocheck
 import type { Endpoint } from 'payload'
 
+import { calculatePromotion } from '@/app/lib/calculatePromotion'
+
 export const purchasePackage: Endpoint = {
     path: '/purchase-package',
     method: 'post',
@@ -13,7 +15,7 @@ export const purchasePackage: Endpoint = {
 
         try {
             const body = await req.json?.()
-            const { packageId, voucherCode } = body || {}
+            const { packageId, selectedMonths, voucherCode, promotionId: selectedPromotionId, promotionCode } = body || {}
 
             if (!packageId) {
                 return Response.json({ error: 'Thiếu packageId' }, { status: 400 })
@@ -30,6 +32,41 @@ export const purchasePackage: Endpoint = {
             if (!pkg || !pkg.isActive) {
                 return Response.json({ error: 'Gói không tồn tại hoặc đã ngưng' }, { status: 404 })
             }
+
+            let originalAmount = pkg.price as number
+            let durationDays = pkg.durationDays as number
+
+            if (pkg.durationOptions && pkg.durationOptions.length > 0) {
+                if (!selectedMonths) {
+                    return Response.json({ error: 'Gói này yêu cầu chọn thời hạn (selectedMonths)' }, { status: 400 })
+                }
+                const option = pkg.durationOptions.find((opt: any) => opt.months === selectedMonths)
+                if (!option) {
+                    return Response.json({ error: `Tùy chọn ${selectedMonths} tháng không hợp lệ` }, { status: 400 })
+                }
+                originalAmount = option.price
+                durationDays = option.months * 30
+            }
+
+            const promotionResult =
+            await calculatePromotion({
+                payload,
+                packageId,
+                originalAmount,
+                promotionId: selectedPromotionId,
+                promotionCode,
+                req,
+            })
+
+            if ((selectedPromotionId || promotionCode) && !promotionResult.promotion) {
+                return Response.json({ error: 'Khuyen mai khong hop le hoac khong ap dung cho goi nay' }, { status: 400 })
+            }
+
+            const promotionDiscount =
+            promotionResult.discountAmount || 0
+
+            const appliedPromotionId =
+            promotionResult.promotion?.id || null
 
             let discountAmount = 0
             let voucherId = null
@@ -54,17 +91,26 @@ export const purchasePackage: Endpoint = {
                     if (voucher.discountType === 'fixed') {
                         discountAmount = voucher.discountValue || 0
                     } else if (voucher.discountType === 'percent') {
-                        discountAmount = ((pkg.price as number) * (voucher.discountValue || 0)) / 100
+                        discountAmount = (originalAmount * (voucher.discountValue || 0)) / 100
                         if (voucher.maxDiscount && discountAmount > voucher.maxDiscount) {
                             discountAmount = voucher.maxDiscount
                         }
                     } else if (voucher.discountType === 'free_post') {
-                        discountAmount = pkg.price as number
+                        discountAmount = originalAmount
                     }
                 }
             }
 
-            const totalAmount = Math.max(0, (pkg.price as number) - discountAmount)
+            if (voucherId && appliedPromotionId && promotionResult.promotion?.allowVoucherStacking === false) {
+                return Response.json({ error: 'Ma khuyen mai nay khong the dung chung voi voucher' }, { status: 400 })
+            }
+
+            const totalAmount = Math.max(
+                0,
+                originalAmount -
+                    discountAmount -
+                    promotionDiscount,
+                )
 
             // 3. Kiểm tra số dư
             const currentBalance = (user.balance as number) || 0
@@ -82,10 +128,13 @@ export const purchasePackage: Endpoint = {
                     user: user.id,
                     orderType: 'package',
                     package: packageId,
-                    originalAmount: pkg.price as number,
+                    durationMonths: selectedMonths || null,
+                    originalAmount: originalAmount,
                     discountAmount,
+                    promotionDiscount,
                     totalAmount,
                     voucher: voucherId,
+                    promotion: appliedPromotionId,
                     paymentMethod: 'balance',
                     status: 'paid',
                     paidAt: new Date().toISOString(),
@@ -96,7 +145,28 @@ export const purchasePackage: Endpoint = {
 
             // 5. Trừ số dư và cập nhật quyền lợi Membership
             const newExpiresAt = new Date()
-            newExpiresAt.setDate(newExpiresAt.getDate() + (pkg.durationDays as number))
+            newExpiresAt.setDate(newExpiresAt.getDate() + (durationDays as number))
+
+            // Tính toán vouchers mới để cộng dồn
+            let currentVouchers = Array.isArray(user.availableVouchers) ? [...user.availableVouchers] : []
+
+            if (pkg.bonusVouchers && pkg.bonusVouchers.length > 0) {
+                for (const bonus of pkg.bonusVouchers) {
+                    const existingIndex = currentVouchers.findIndex(
+                        (v: any) => v.discountValue === bonus.discountValue && v.appliedFor === bonus.appliedFor
+                    )
+
+                    if (existingIndex > -1) {
+                        currentVouchers[existingIndex].quantity += (bonus.quantity || 1)
+                    } else {
+                        currentVouchers.push({
+                            quantity: bonus.quantity || 1,
+                            discountValue: bonus.discountValue || 0,
+                            appliedFor: bonus.appliedFor,
+                        })
+                    }
+                }
+            }
 
             await payload.update({
                 collection: 'users',
@@ -104,8 +174,8 @@ export const purchasePackage: Endpoint = {
                 data: {
                     balance: currentBalance - totalAmount,
                     activePackage: packageId,
-                    availableListings: (user.availableListings || 0) + (pkg.totalProperties as number),
                     packageExpiresAt: newExpiresAt.toISOString(),
+                    availableVouchers: currentVouchers,
                 },
                 overrideAccess: false,
                 req,
@@ -125,28 +195,7 @@ export const purchasePackage: Endpoint = {
                 })
             }
 
-            // 7. Tạo voucher tặng kèm (nếu gói có)
-            if (pkg.bonusVouchers && (pkg.bonusVouchers as number) > 0) {
-                for (let i = 0; i < (pkg.bonusVouchers as number); i++) {
-                    const code = `BONUS-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`
-                    const expiresAt = new Date()
-                    expiresAt.setDate(expiresAt.getDate() + (pkg.durationDays as number))
-
-                    await payload.create({
-                        collection: 'vouchers',
-                        data: {
-                            code,
-                            user: user.id,
-                            discountType: 'free_post',
-                            status: 'active',
-                            expiresAt: expiresAt.toISOString(),
-                            source: 'package',
-                        },
-                        overrideAccess: false,
-                        req,
-                    })
-                }
-            }
+            // 7. Voucher đã được cập nhật trực tiếp vào user.availableVouchers
 
             return Response.json({
                 success: true,

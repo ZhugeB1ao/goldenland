@@ -23,8 +23,6 @@ const parseNumberMin = (value: string | undefined, min: number): number | undefi
 
 type SearchPropertiesQuery = {
   keyword?: string
-  listingType?: string
-  listingTypes?: string
   propertyType?: string
   propertyTypes?: string
   provinceCode?: string
@@ -86,8 +84,6 @@ export const searchProperties: Endpoint = {
 
     const {
       keyword,
-      listingType,
-      listingTypes,
       propertyType,
       propertyTypes,
       provinceCode,
@@ -124,7 +120,6 @@ export const searchProperties: Endpoint = {
     const districtNumber = parseIntInRange(district, 1, 30)
     const bedroomsNumber = parseIntInRange(bedrooms, 1, 20)
     const bathroomsNumber = parseIntInRange(bathrooms, 1, 20)
-    const listingTypeList = parseCsv(listingTypes)
     const propertyTypeList = parseCsv(propertyTypes)
     const provinceCodeList = parseCsv(provinceCodes)
     const directionList = parseCsv(directions)
@@ -181,12 +176,6 @@ export const searchProperties: Endpoint = {
           { seoKeywords: { like: keyword } },
         ],
       })
-    }
-
-    if (listingTypeList.length > 0) {
-      where.and.push({ listingType: { in: listingTypeList } })
-    } else if (listingType) {
-      where.and.push({ listingType: { equals: listingType } })
     }
 
     if (propertyTypeList.length > 0) {
@@ -343,43 +332,6 @@ export const searchProperties: Endpoint = {
         },
       })
 
-      //{
-      //   "success": true,
-      //   "data": [
-      //     {
-      //       "id": 101,
-      //       "title": "Căn hộ 2PN Quận 7 giá tốt",
-      //       "listingType": "sale",
-      //       "propertyType": "apartment",
-      //       "price": 2800000000,
-      //       "bedrooms": 2,
-      //       "bathrooms": 2,
-      //       "provinceCode": "79",
-      //       "address": "Nguyễn Hữu Thọ, Quận 7, TP.HCM",
-      //       "status": "active"
-      //     },
-      //     {
-      //       "id": 205,
-      //       "title": "Chung cư Phú Mỹ Hưng 2PN",
-      //       "listingType": "sale",
-      //       "propertyType": "apartment",
-      //       "price": 2950000000,
-      //       "bedrooms": 2,
-      //       "bathrooms": 2,
-      //       "provinceCode": "79",
-      //       "address": "Phú Mỹ Hưng, Quận 7, TP.HCM",
-      //       "status": "active"
-      //     }
-      //   ],
-      //   "pagination": {
-      //     "page": 1,
-      //     "totalPages": 13,
-      //     "totalDocs": 128,
-      //     "limit": 10,
-      //     "hasNextPage": true,
-      //     "hasPrevPage": false
-      //   }
-      // }
     } catch (error: any) {
       return Response.json({ error: error.message }, { status: 500 })
     }

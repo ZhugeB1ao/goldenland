@@ -12,6 +12,8 @@ export default async function Providers({ children }: { children: React.ReactNod
     fullName?: string | null
     phone?: string | null
     avatarUrl?: string | null
+    activePackage?: string | number | { id?: string | number } | null
+    active_package_id?: string | number | null
   } | null = null
 
   try {
@@ -27,6 +29,12 @@ export default async function Providers({ children }: { children: React.ReactNod
           fullName: (user as { fullName?: string | null }).fullName ?? null,
           phone: (user as { phone?: string | null }).phone ?? null,
           avatarUrl: (user as { avatar_id?: string | null }).avatar_id ?? null,
+          activePackage:
+            (user as { activePackage?: string | number | { id?: string | number } | null })
+              .activePackage ?? null,
+          active_package_id:
+            (user as { active_package_id?: string | number | null }).active_package_id ??
+            null,
         }
       : null
   } catch {

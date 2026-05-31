@@ -12,7 +12,6 @@ import Step4Images from './components/Step4Images'
 import Step5Preview from './components/Step5Preview'
 
 export type FormData = {
-  listingType: 'sale' | 'rent' | ''
   propertyType: string
   title: string
   price: number
@@ -28,12 +27,14 @@ export type FormData = {
   wardCode: string
   street: string
   address: string
+  project: string
+  latitude: number | null
+  longitude: number | null
   images: { image: string; sort: number }[]
   videoUrl: string
 }
 
 const INITIAL: FormData = {
-  listingType: '',
   propertyType: '',
   title: '',
   price: 0,
@@ -49,6 +50,9 @@ const INITIAL: FormData = {
   wardCode: '',
   street: '',
   address: '',
+  project: '',
+  latitude: null,
+  longitude: null,
   images: [],
   videoUrl: '',
 }
@@ -63,7 +67,6 @@ const STEPS = [
 
 function validateStep(step: number, data: FormData): string {
   if (step === 0) {
-    if (!data.listingType) return 'Vui lòng chọn loại giao dịch'
     if (!data.propertyType) return 'Vui lòng chọn loại bất động sản'
   }
   if (step === 1) {
@@ -86,7 +89,7 @@ export default function DangTinPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
 
-  const update = (field: keyof FormData, value: string | number) => {
+  const update = (field: keyof FormData, value: string | number | null) => {
     setData((prev) => ({ ...prev, [field]: value }))
     setValidationError('')
   }
@@ -112,7 +115,6 @@ export default function DangTinPage() {
     const body = {
       title: data.title,
       description: data.description,
-      listingType: data.listingType,
       propertyType: data.propertyType,
       price: data.price,
       priceUnit: data.priceUnit,
@@ -126,6 +128,9 @@ export default function DangTinPage() {
       wardCode: data.wardCode || undefined,
       street: data.street || undefined,
       address: data.address || undefined,
+      project: data.project || undefined,
+      latitude: typeof data.latitude === 'number' ? data.latitude : undefined,
+      longitude: typeof data.longitude === 'number' ? data.longitude : undefined,
       images: data.images.length > 0 ? data.images : undefined,
       videoUrl: data.videoUrl || undefined,
       status: 'pending',
@@ -193,7 +198,6 @@ export default function DangTinPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           {step === 0 && (
             <Step1Type
-              listingType={data.listingType}
               propertyType={data.propertyType}
               onChange={(field, value) => update(field, value)}
             />

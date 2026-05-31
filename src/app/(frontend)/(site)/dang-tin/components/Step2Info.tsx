@@ -71,12 +71,13 @@ export default function Step2Info({ data, onChange }: Props) {
     <div className="space-y-5">
       <div>
         <Label required>Tiêu đề tin đăng</Label>
-        <Input
-          type="text"
+        <textarea
+          rows={2}
           maxLength={255}
           placeholder="VD: Bán nhà 3 tầng mặt tiền đường Lê Văn Lương, Hà Nội"
           value={data.title}
           onChange={(e) => onChange('title', e.target.value)}
+          className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition resize-none"
         />
         <p className="text-xs text-gray-400 mt-1">{data.title.length}/255 ký tự</p>
       </div>

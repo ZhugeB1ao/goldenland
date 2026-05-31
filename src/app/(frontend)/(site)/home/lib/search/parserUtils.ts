@@ -1,4 +1,4 @@
-import type { ParsedSearchFilters } from './types'
+import type { ParsedSearchFilters, SearchTab } from './types'
 import {
   AREA_RANGE_PARSE_RE,
   AREA_RANGE_REMOVE_RE,
@@ -16,8 +16,6 @@ import {
   FURNITURE_STATUS_REMOVE_RE,
   LEGAL_STATUS_PARSE_RE,
   LEGAL_STATUS_REMOVE_RE,
-  LISTING_TYPE_PARSE_RE,
-  LISTING_TYPE_REMOVE_RE,
   POST_TYPE_PARSE_RE,
   POST_TYPE_REMOVE_RE,
   PRICE_RANGE_PARSE_RE,
@@ -118,13 +116,6 @@ export const parsePrice = (
   }
 }
 
-export const parseListingType = (normalizedInput: string): ParsedSearchFilters['listingType'] => {
-  const match = normalizedInput.match(LISTING_TYPE_PARSE_RE)?.[0] ?? ''
-  if (/cho\s*thue|thue/u.test(match)) return 'rent'
-  if (/ban|mua\s*ban/u.test(match)) return 'sale'
-  return undefined
-}
-
 export const parsePropertyType = (normalizedInput: string): ParsedSearchFilters['propertyType'] => {
   const match = normalizedInput.match(PROPERTY_TYPE_PARSE_RE)?.[0] ?? ''
   if (/chung\s*cu|can\s*ho/u.test(match)) return 'apartment'
@@ -176,12 +167,15 @@ export const parseFurnitureStatus = (
 
 export const parsePostType = (normalizedInput: string): ParsedSearchFilters['postType'] => {
   const match = normalizedInput.match(POST_TYPE_PARSE_RE)?.[0] ?? ''
-  if (/vip/u.test(match)) return 'vip'
+  if (/kim\s*cuong|kim\s*cương/u.test(match)) return 'diamond'
+  if (/vang|vàng/u.test(match)) return 'gold'
+  if (/bac|bạc/u.test(match)) return 'silver'
+  if (/vip/u.test(match)) return 'diamond'
   return undefined
 }
 
 // Remove structured tokens so the remaining text can be used as keyword.
-export const buildKeyword = (input: string): string => {
+export const buildKeyword = (input: string, tab: SearchTab): string => {
   return compactWhitespace(
     input
       .replace(DISTRICT_REMOVE_RE, ' ')
@@ -191,7 +185,6 @@ export const buildKeyword = (input: string): string => {
       .replace(AREA_SINGLE_REMOVE_RE, ' ')
       .replace(PRICE_RANGE_REMOVE_RE, ' ')
       .replace(PRICE_SINGLE_REMOVE_RE, ' ')
-      .replace(LISTING_TYPE_REMOVE_RE, ' ')
       .replace(PROPERTY_TYPE_REMOVE_RE, ' ')
       .replace(DIRECTION_REMOVE_RE, ' ')
       .replace(LEGAL_STATUS_REMOVE_RE, ' ')
